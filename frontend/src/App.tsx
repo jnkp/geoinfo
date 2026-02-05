@@ -1,33 +1,41 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+/**
+ * Main application component with routing setup.
+ *
+ * This component provides:
+ * - React Router configuration for SPA navigation
+ * - Application layout (header, main, footer)
+ * - Navigation component
+ */
+
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+
+// Page components
+import Dashboard from './pages/Dashboard';
+import FetchConfig from './pages/FetchConfig';
+import MapView from './pages/MapView';
 
 /**
- * Placeholder page components - will be replaced with actual implementations
+ * Navigation link component with active state styling
  */
-function DashboardPlaceholder() {
-  return (
-    <div className="page">
-      <h2>Dashboard</h2>
-      <p>Statistics visualization dashboard will be displayed here.</p>
-    </div>
-  )
-}
+function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+  const location = useLocation();
+  const isActive = location.pathname === to;
 
-function FetchConfigPlaceholder() {
   return (
-    <div className="page">
-      <h2>Fetch Configuration</h2>
-      <p>Configure StatFin data fetching here.</p>
-    </div>
-  )
-}
-
-function MapViewPlaceholder() {
-  return (
-    <div className="page">
-      <h2>Map View</h2>
-      <p>Finnish region map visualization will be displayed here.</p>
-    </div>
-  )
+    <Link
+      to={to}
+      style={{
+        fontWeight: 500,
+        padding: 'var(--spacing-2) var(--spacing-3)',
+        borderRadius: 'var(--radius)',
+        transition: 'all var(--transition-fast)',
+        backgroundColor: isActive ? 'var(--color-gray-100)' : 'transparent',
+        color: isActive ? 'var(--color-primary)' : 'var(--color-gray-600)',
+      }}
+    >
+      {children}
+    </Link>
+  );
 }
 
 /**
@@ -41,17 +49,41 @@ function Navigation() {
       </div>
       <ul className="nav-links">
         <li>
-          <Link to="/">Dashboard</Link>
+          <NavLink to="/">Dashboard</NavLink>
         </li>
         <li>
-          <Link to="/config">Fetch Config</Link>
+          <NavLink to="/config">Fetch Config</NavLink>
         </li>
         <li>
-          <Link to="/map">Map</Link>
+          <NavLink to="/map">Map</NavLink>
         </li>
       </ul>
     </nav>
-  )
+  );
+}
+
+/**
+ * Inner app component that uses routing hooks
+ * Must be inside BrowserRouter
+ */
+function AppContent() {
+  return (
+    <div className="app">
+      <header className="header">
+        <Navigation />
+      </header>
+      <main className="main">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/config" element={<FetchConfig />} />
+          <Route path="/map" element={<MapView />} />
+        </Routes>
+      </main>
+      <footer className="footer">
+        <p>GeoInfo - Finnish Public Statistics Platform</p>
+      </footer>
+    </div>
+  );
 }
 
 /**
@@ -60,23 +92,9 @@ function Navigation() {
 function App() {
   return (
     <BrowserRouter>
-      <div className="app">
-        <header className="header">
-          <Navigation />
-        </header>
-        <main className="main">
-          <Routes>
-            <Route path="/" element={<DashboardPlaceholder />} />
-            <Route path="/config" element={<FetchConfigPlaceholder />} />
-            <Route path="/map" element={<MapViewPlaceholder />} />
-          </Routes>
-        </main>
-        <footer className="footer">
-          <p>GeoInfo - Finnish Public Statistics Platform</p>
-        </footer>
-      </div>
+      <AppContent />
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
