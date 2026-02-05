@@ -11,9 +11,9 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useDatasets } from '../api';
 import { TableBrowser } from '../components/TableBrowser';
 import { FetchConfigForm } from '../components/FetchConfigForm';
+import { FetchConfigList } from '../components/FetchConfigList';
 import type { StatFinTableInfo } from '../types/api';
 
 /**
@@ -62,170 +62,6 @@ function Tabs({
 }
 
 /**
- * List of existing fetch configurations
- */
-function ConfigList() {
-  const { data: datasets, isLoading, error } = useDatasets({ page: 1, page_size: 50 });
-
-  if (isLoading) {
-    return (
-      <div className="loading">
-        <div className="spinner" />
-        <span style={{ marginLeft: 'var(--spacing-3)' }}>
-          Loading configurations...
-        </span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error">
-        <div className="error-title">Failed to load configurations</div>
-        <p>{error.message}</p>
-      </div>
-    );
-  }
-
-  if (!datasets?.items.length) {
-    return (
-      <div
-        style={{
-          textAlign: 'center',
-          padding: 'var(--spacing-8)',
-        }}
-      >
-        <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-4)' }}>📭</div>
-        <h4>No Configurations Yet</h4>
-        <p className="text-muted">
-          Add a new fetch configuration to start collecting data from StatFin.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: 'var(--spacing-2)',
-                borderBottom: '1px solid var(--color-gray-200)',
-                fontWeight: 600,
-              }}
-            >
-              Dataset
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: 'var(--spacing-2)',
-                borderBottom: '1px solid var(--color-gray-200)',
-                fontWeight: 600,
-              }}
-            >
-              Table ID
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: 'var(--spacing-2)',
-                borderBottom: '1px solid var(--color-gray-200)',
-                fontWeight: 600,
-              }}
-            >
-              Time Resolution
-            </th>
-            <th
-              style={{
-                textAlign: 'center',
-                padding: 'var(--spacing-2)',
-                borderBottom: '1px solid var(--color-gray-200)',
-                fontWeight: 600,
-              }}
-            >
-              Status
-            </th>
-            <th
-              style={{
-                textAlign: 'right',
-                padding: 'var(--spacing-2)',
-                borderBottom: '1px solid var(--color-gray-200)',
-                fontWeight: 600,
-              }}
-            >
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {datasets.items.map((dataset) => (
-            <tr key={dataset.id}>
-              <td style={{ padding: 'var(--spacing-2)' }}>
-                <div style={{ fontWeight: 500 }}>
-                  {dataset.name_fi || dataset.name_en || dataset.id}
-                </div>
-                {dataset.description && (
-                  <div
-                    className="text-muted"
-                    style={{ fontSize: 'var(--font-size-sm)' }}
-                  >
-                    {dataset.description}
-                  </div>
-                )}
-              </td>
-              <td
-                style={{
-                  padding: 'var(--spacing-2)',
-                  fontFamily: 'monospace',
-                  fontSize: 'var(--font-size-sm)',
-                }}
-              >
-                {dataset.statfin_table_id}
-              </td>
-              <td
-                style={{
-                  padding: 'var(--spacing-2)',
-                  textTransform: 'capitalize',
-                }}
-              >
-                {dataset.time_resolution}
-              </td>
-              <td style={{ padding: 'var(--spacing-2)', textAlign: 'center' }}>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    padding: 'var(--spacing-1) var(--spacing-2)',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'var(--color-success)',
-                    color: 'white',
-                    fontSize: 'var(--font-size-xs)',
-                    fontWeight: 500,
-                  }}
-                >
-                  Active
-                </span>
-              </td>
-              <td style={{ padding: 'var(--spacing-2)', textAlign: 'right' }}>
-                <button className="btn btn-secondary" style={{ marginRight: 'var(--spacing-2)' }} disabled>
-                  Edit
-                </button>
-                <button className="btn btn-secondary" disabled>
-                  Fetch Now
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/**
  * Main Fetch Configuration page component
  */
 export default function FetchConfig() {
@@ -259,18 +95,7 @@ export default function FetchConfig() {
 
       {activeTab === 'configurations' && (
         <div className="card">
-          <div className="card-header flex justify-between items-center">
-            <h4 className="card-title" style={{ marginBottom: 0 }}>
-              Configured Datasets
-            </h4>
-            <button
-              className="btn btn-primary"
-              onClick={() => setActiveTab('add')}
-            >
-              + Add Configuration
-            </button>
-          </div>
-          <ConfigList />
+          <FetchConfigList onAddNew={() => setActiveTab('add')} />
         </div>
       )}
 

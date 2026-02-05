@@ -26,3 +26,9 @@ export type { RegionMapProps } from './RegionMap';
 // StatFin table browsing components
 export { TableBrowser } from './TableBrowser';
 export type { TableBrowserProps } from './TableBrowser';
+
+// Fetch configuration components
+export { FetchConfigForm } from './FetchConfigForm';
+export type { FetchConfigFormProps } from './FetchConfigForm';
+export { FetchConfigList } from './FetchConfigList';
+export type { FetchConfigListProps } from './FetchConfigList';
