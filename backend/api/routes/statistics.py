@@ -2,6 +2,7 @@
 
 This module provides FastAPI routes for querying statistics data:
 - GET /api/statistics: Query statistics with multi-dimensional filtering
+- GET /api/statistics/linked: Query multiple datasets with data linkage
 - GET /api/statistics/{statistic_id}: Get a single statistic by ID
 - POST /api/statistics: Create a new statistic data point (for data import)
 - DELETE /api/statistics/{statistic_id}: Delete a statistic data point
@@ -16,11 +17,13 @@ All routes use async database sessions and return appropriate HTTP status codes.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.schemas import (
     ErrorResponse,
+    LinkedDataPoint,
+    LinkedDataResponse,
     MessageResponse,
     StatisticCreate,
     StatisticListResponse,
@@ -155,6 +158,259 @@ async def list_statistics(
 
     return StatisticListResponse(
         items=[StatisticResponse.model_validate(s) for s in statistics],
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get(
+    "/linked",
+    response_model=LinkedDataResponse,
+    summary="Query linked data",
+    description="Query multiple datasets with automatic joining on shared dimensions (time, region, industry).",
+    responses={
+        400: {"model": ErrorResponse, "description": "No datasets specified"},
+    },
+)
+async def get_linked_data(
+    datasets: str = Query(
+        ...,
+        description="Comma-separated list of dataset IDs to query",
+        examples=["employment,wages", "dataset_a,dataset_b,dataset_c"],
+    ),
+    year: int | None = Query(None, description="Filter by exact year"),
+    year_from: int | None = Query(None, description="Filter by minimum year"),
+    year_to: int | None = Query(None, description="Filter by maximum year"),
+    quarter: int | None = Query(None, ge=1, le=4, description="Filter by quarter (1-4)"),
+    month: int | None = Query(None, ge=1, le=12, description="Filter by month (1-12)"),
+    region_code: str | None = Query(None, description="Filter by region code"),
+    region_level: str | None = Query(
+        None, description="Filter by region level (kunta, seutukunta, maakunta)"
+    ),
+    industry_code: str | None = Query(None, description="Filter by industry code"),
+    industry_level: str | None = Query(
+        None, description="Filter by industry level (section, division, group, class)"
+    ),
+    value_label: str | None = Query(None, description="Filter by value label"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(100, ge=1, le=1000, description="Items per page"),
+    db: AsyncSession = Depends(get_db),
+) -> LinkedDataResponse:
+    """Query multiple datasets with data linkage on shared dimensions.
+
+    This endpoint allows querying statistics from multiple datasets at once,
+    returning data points that are linked by their shared dimensional coordinates
+    (year, quarter, month, region_code, industry_code).
+
+    Data from different datasets that share the same dimensional coordinates
+    are combined into a single LinkedDataPoint with values keyed by dataset_id.
+
+    Args:
+        datasets: Comma-separated list of dataset IDs to query
+        year: Filter by exact year
+        year_from: Filter by minimum year (inclusive)
+        year_to: Filter by maximum year (inclusive)
+        quarter: Filter by quarter (1-4)
+        month: Filter by month (1-12)
+        region_code: Filter by region code
+        region_level: Filter by region administrative level
+        industry_code: Filter by industry code
+        industry_level: Filter by industry classification level
+        value_label: Filter by value label
+        page: Page number (1-indexed)
+        page_size: Number of items per page (max 1000)
+        db: Database session
+
+    Returns:
+        LinkedDataResponse with linked data from multiple datasets
+    """
+    # Parse dataset IDs from comma-separated string
+    dataset_ids = [d.strip() for d in datasets.split(",") if d.strip()]
+
+    if not dataset_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid dataset IDs provided. Use comma-separated list of dataset IDs.",
+        )
+
+    # Build filter conditions for the query
+    conditions = [Statistic.dataset_id.in_(dataset_ids)]
+
+    # Time dimension filters
+    if year is not None:
+        conditions.append(Statistic.year == year)
+    if year_from is not None:
+        conditions.append(Statistic.year >= year_from)
+    if year_to is not None:
+        conditions.append(Statistic.year <= year_to)
+    if quarter is not None:
+        conditions.append(Statistic.quarter == quarter)
+    if month is not None:
+        conditions.append(Statistic.month == month)
+
+    # Geographic dimension filters
+    if region_code is not None:
+        conditions.append(Statistic.region_code == region_code)
+    if region_level is not None:
+        conditions.append(Region.region_level == region_level)
+
+    # Industry dimension filters
+    if industry_code is not None:
+        conditions.append(Statistic.industry_code == industry_code)
+    if industry_level is not None:
+        conditions.append(Industry.level == industry_level)
+
+    # Value label filter
+    if value_label is not None:
+        conditions.append(Statistic.value_label == value_label)
+
+    # Build base query to get all statistics from requested datasets
+    base_query = select(Statistic)
+
+    # Add joins if filtering by dimension levels
+    if region_level is not None:
+        base_query = base_query.join(
+            Region, Statistic.region_code == Region.code, isouter=True
+        )
+    if industry_level is not None:
+        base_query = base_query.join(
+            Industry, Statistic.industry_code == Industry.code, isouter=True
+        )
+
+    # Apply filters
+    base_query = base_query.where(and_(*conditions))
+
+    # Get distinct dimension combinations for pagination
+    # Count unique dimension combinations
+    dimension_cols = [
+        Statistic.year,
+        Statistic.quarter,
+        Statistic.month,
+        Statistic.region_code,
+        Statistic.industry_code,
+    ]
+
+    distinct_dims_query = (
+        select(*dimension_cols)
+        .where(and_(*conditions))
+        .distinct()
+    )
+
+    # Add joins for dimension level filtering in distinct query too
+    if region_level is not None:
+        distinct_dims_query = distinct_dims_query.join(
+            Region, Statistic.region_code == Region.code, isouter=True
+        )
+    if industry_level is not None:
+        distinct_dims_query = distinct_dims_query.join(
+            Industry, Statistic.industry_code == Industry.code, isouter=True
+        )
+
+    # Count total unique dimension combinations
+    count_query = select(func.count()).select_from(distinct_dims_query.subquery())
+    total_result = await db.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Get paginated dimension combinations
+    offset = (page - 1) * page_size
+    dims_query = (
+        distinct_dims_query
+        .order_by(
+            Statistic.year.desc(),
+            Statistic.quarter.desc().nulls_last(),
+            Statistic.month.desc().nulls_last(),
+            Statistic.region_code.nulls_last(),
+            Statistic.industry_code.nulls_last(),
+        )
+        .offset(offset)
+        .limit(page_size)
+    )
+
+    dims_result = await db.execute(dims_query)
+    dimension_combos = dims_result.all()
+
+    # If no dimension combinations found, return empty response
+    if not dimension_combos:
+        return LinkedDataResponse(
+            datasets=dataset_ids,
+            items=[],
+            total=0,
+            page=page,
+            page_size=page_size,
+        )
+
+    # Fetch all statistics that match the dimension combinations
+    # Build OR conditions for each dimension combination
+    combo_conditions = []
+    for combo in dimension_combos:
+        year_val, quarter_val, month_val, region_val, industry_val = combo
+        combo_cond = [
+            Statistic.year == year_val,
+            Statistic.dataset_id.in_(dataset_ids),
+        ]
+        if quarter_val is not None:
+            combo_cond.append(Statistic.quarter == quarter_val)
+        else:
+            combo_cond.append(Statistic.quarter.is_(None))
+        if month_val is not None:
+            combo_cond.append(Statistic.month == month_val)
+        else:
+            combo_cond.append(Statistic.month.is_(None))
+        if region_val is not None:
+            combo_cond.append(Statistic.region_code == region_val)
+        else:
+            combo_cond.append(Statistic.region_code.is_(None))
+        if industry_val is not None:
+            combo_cond.append(Statistic.industry_code == industry_val)
+        else:
+            combo_cond.append(Statistic.industry_code.is_(None))
+
+        combo_conditions.append(and_(*combo_cond))
+
+    stats_query = (
+        select(Statistic)
+        .where(or_(*combo_conditions))
+        .order_by(Statistic.year.desc())
+    )
+    stats_result = await db.execute(stats_query)
+    all_stats = stats_result.scalars().all()
+
+    # Group statistics by dimension combination
+    linked_data_map: dict[tuple, LinkedDataPoint] = {}
+
+    for stat in all_stats:
+        key = (stat.year, stat.quarter, stat.month, stat.region_code, stat.industry_code)
+
+        if key not in linked_data_map:
+            linked_data_map[key] = LinkedDataPoint(
+                year=stat.year,
+                quarter=stat.quarter,
+                month=stat.month,
+                region_code=stat.region_code,
+                industry_code=stat.industry_code,
+                values={},
+                metadata={},
+            )
+
+        # Add value from this dataset
+        linked_data_map[key].values[stat.dataset_id] = stat.value
+        linked_data_map[key].metadata[stat.dataset_id] = {
+            "unit": stat.unit,
+            "value_label": stat.value_label,
+            "data_quality": stat.data_quality,
+        }
+
+    # Convert to list preserving the order from dimension_combos
+    items = []
+    for combo in dimension_combos:
+        key = tuple(combo)
+        if key in linked_data_map:
+            items.append(linked_data_map[key])
+
+    return LinkedDataResponse(
+        datasets=dataset_ids,
+        items=items,
         total=total,
         page=page,
         page_size=page_size,

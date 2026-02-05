@@ -506,3 +506,67 @@ class StatFinTableMetadata(BaseModel):
     )
     last_updated: Optional[str] = Field(None, description="Last update timestamp")
     source: Optional[str] = Field(None, description="Data source information")
+
+
+# =============================================================================
+# Linked Data Schemas
+# =============================================================================
+
+
+class LinkedDataPoint(BaseModel):
+    """Schema for a linked data point combining multiple datasets.
+
+    Represents a single data point with values from multiple datasets
+    that share the same dimensional coordinates (time, region, industry).
+    """
+
+    year: int = Field(..., description="Year of the data point")
+    quarter: Optional[int] = Field(
+        None, ge=1, le=4, description="Quarter (1-4) for quarterly data"
+    )
+    month: Optional[int] = Field(
+        None, ge=1, le=12, description="Month (1-12) for monthly data"
+    )
+    region_code: Optional[str] = Field(
+        None, description="Region code for geographic dimension"
+    )
+    industry_code: Optional[str] = Field(
+        None, description="Industry code for sector dimension"
+    )
+    values: dict[str, Optional[float]] = Field(
+        ..., description="Values keyed by dataset_id"
+    )
+    metadata: dict[str, dict[str, Optional[str]]] = Field(
+        default_factory=dict,
+        description="Metadata (unit, value_label, data_quality) keyed by dataset_id",
+    )
+
+
+class LinkedDataResponse(BaseModel):
+    """Schema for linked data API response.
+
+    Returns data from multiple datasets joined on shared dimensions.
+    """
+
+    datasets: list[str] = Field(..., description="List of dataset IDs included in the response")
+    items: list[LinkedDataPoint] = Field(..., description="Linked data points")
+    total: int = Field(..., description="Total number of matching dimension combinations")
+    page: int = Field(..., description="Current page number")
+    page_size: int = Field(..., description="Items per page")
+
+
+class DatasetCoverage(BaseModel):
+    """Schema for dataset coverage information in linked queries."""
+
+    dataset_id: str = Field(..., description="Dataset identifier")
+    name_fi: str = Field(..., description="Finnish name of the dataset")
+    data_point_count: int = Field(..., description="Number of data points in the result set")
+    year_range: Optional[tuple[int, int]] = Field(
+        None, description="Range of years with data (min, max)"
+    )
+    has_region_dimension: bool = Field(
+        False, description="Whether dataset includes region dimension"
+    )
+    has_industry_dimension: bool = Field(
+        False, description="Whether dataset includes industry dimension"
+    )
