@@ -18,3 +18,7 @@ export type { IndustryFilterProps } from './IndustryFilter';
 // Data visualization components
 export { DataChart } from './DataChart';
 export type { DataChartProps, ChartType, ChartDataPoint } from './DataChart';
+
+// Map components
+export { RegionMap } from './RegionMap';
+export type { RegionMapProps } from './RegionMap';
