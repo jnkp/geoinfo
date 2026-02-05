@@ -5,6 +5,13 @@ This package contains service modules for:
 - Data fetching orchestration (fetcher.py)
 """
 
+from services.fetcher import (
+    DataFetcher,
+    DataNormalizer,
+    FetchResult,
+    NormalizedRecord,
+    fetch_dataset_once,
+)
 from services.statfin import (
     StatFinCategory,
     StatFinClient,
@@ -20,6 +27,13 @@ from services.statfin import (
 )
 
 __all__ = [
+    # Fetcher service
+    "DataFetcher",
+    "DataNormalizer",
+    "FetchResult",
+    "NormalizedRecord",
+    "fetch_dataset_once",
+    # StatFin client
     "StatFinCategory",
     "StatFinClient",
     "StatFinDataPoint",
