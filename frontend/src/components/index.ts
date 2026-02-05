@@ -14,3 +14,7 @@ export type { TimeSliderProps } from './TimeSlider';
 // Industry filtering components
 export { IndustryFilter } from './IndustryFilter';
 export type { IndustryFilterProps } from './IndustryFilter';
+
+// Data visualization components
+export { DataChart } from './DataChart';
+export type { DataChartProps, ChartType, ChartDataPoint } from './DataChart';
