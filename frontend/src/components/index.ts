@@ -32,3 +32,7 @@ export { FetchConfigForm } from './FetchConfigForm';
 export type { FetchConfigFormProps } from './FetchConfigForm';
 export { FetchConfigList } from './FetchConfigList';
 export type { FetchConfigListProps } from './FetchConfigList';
+
+// Dataset selection components
+export { DatasetSelector, createDatasetColorMap, getDatasetColor, DATASET_COLORS } from './DatasetSelector';
+export type { DatasetSelectorProps, DatasetColorMap } from './DatasetSelector';
