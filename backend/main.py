@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import get_settings
 from models.database import init_db, close_db
-from api.routes import datasets_router, dimensions_router, fetch_router, statistics_router
+from api.routes import datasets_router, dimensions_router, fetch_router, statfin_router, statistics_router
 
 # Load settings
 settings = get_settings()
@@ -122,3 +122,4 @@ app.include_router(datasets_router, prefix="/api/datasets", tags=["datasets"])
 app.include_router(statistics_router, prefix="/api/statistics", tags=["statistics"])
 app.include_router(dimensions_router, prefix="/api", tags=["dimensions"])
 app.include_router(fetch_router, prefix="/api/fetch-configs", tags=["fetch"])
+app.include_router(statfin_router, prefix="/api/statfin", tags=["statfin"])

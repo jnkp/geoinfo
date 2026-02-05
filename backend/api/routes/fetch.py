@@ -1,4 +1,4 @@
-"""API routes for fetch configuration CRUD operations.
+"""API routes for fetch configuration CRUD operations and StatFin API integration.
 
 This module provides FastAPI routes for managing fetch configurations:
 - GET /api/fetch-configs: List all fetch configurations with pagination
@@ -6,6 +6,9 @@ This module provides FastAPI routes for managing fetch configurations:
 - POST /api/fetch-configs: Create a new fetch configuration
 - PATCH /api/fetch-configs/{config_id}: Update fetch configuration
 - DELETE /api/fetch-configs/{config_id}: Delete a fetch configuration
+
+And StatFin API browsing endpoints:
+- GET /api/statfin/tables: Browse available StatFin tables
 
 All routes use async database sessions and return appropriate HTTP status codes.
 """
@@ -21,10 +24,16 @@ from api.schemas import (
     FetchConfigResponse,
     FetchConfigUpdate,
     MessageResponse,
+    StatFinTableInfo,
+    StatFinTableListResponse,
 )
 from models import Dataset, FetchConfig, get_db
+from services.statfin import StatFinClient, StatFinError
 
 router = APIRouter()
+
+# Separate router for StatFin API endpoints
+statfin_router = APIRouter()
 
 
 @router.get(
@@ -257,3 +266,61 @@ async def delete_fetch_config(
     await db.delete(config)
 
     return MessageResponse(message=f"Fetch configuration '{config_id}' deleted successfully")
+
+
+# =============================================================================
+# StatFin API Browsing Endpoints
+# =============================================================================
+
+
+@statfin_router.get(
+    "/tables",
+    response_model=StatFinTableListResponse,
+    summary="List available StatFin tables",
+    description="Browse available tables from the StatFin PxWeb API. "
+    "Use the 'path' parameter to navigate the hierarchy.",
+    responses={
+        500: {"model": ErrorResponse, "description": "StatFin API error"},
+    },
+)
+async def list_statfin_tables(
+    path: str = Query("", description="Path in the StatFin hierarchy (empty for root)"),
+) -> StatFinTableListResponse:
+    """List available tables and folders from the StatFin API.
+
+    This endpoint allows browsing the StatFin table hierarchy. The StatFin
+    database organizes tables in a tree structure with folders and tables.
+
+    Args:
+        path: Path in the hierarchy (e.g., "" for root, "vaerak" for demographics)
+
+    Returns:
+        StatFinTableListResponse with list of tables/folders at the specified path
+
+    Raises:
+        HTTPException: 500 if StatFin API request fails
+    """
+    client = StatFinClient()
+    try:
+        async with client:
+            items = await client.list_tables(path)
+
+            tables = [
+                StatFinTableInfo(
+                    table_id=item.id,
+                    text=item.text,
+                    type="table" if item.is_table else "folder",
+                    path=item.path,
+                )
+                for item in items
+            ]
+
+            return StatFinTableListResponse(
+                tables=tables,
+                total=len(tables),
+            )
+    except StatFinError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch tables from StatFin API: {e.message}",
+        )
