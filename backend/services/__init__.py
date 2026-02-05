@@ -5,6 +5,30 @@ This package contains service modules for:
 - Data fetching orchestration (fetcher.py)
 """
 
-from services.statfin import StatFinClient
+from services.statfin import (
+    StatFinCategory,
+    StatFinClient,
+    StatFinDataPoint,
+    StatFinDataset,
+    StatFinDimension,
+    StatFinDimensionValue,
+    StatFinError,
+    StatFinParsedDimension,
+    StatFinRateLimitError,
+    StatFinTableInfo,
+    StatFinTableMetadata,
+)
 
-__all__ = ["StatFinClient"]
+__all__ = [
+    "StatFinCategory",
+    "StatFinClient",
+    "StatFinDataPoint",
+    "StatFinDataset",
+    "StatFinDimension",
+    "StatFinDimensionValue",
+    "StatFinError",
+    "StatFinParsedDimension",
+    "StatFinRateLimitError",
+    "StatFinTableInfo",
+    "StatFinTableMetadata",
+]
