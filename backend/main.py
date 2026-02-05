@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import get_settings
 from models.database import init_db, close_db
+from api.routes import datasets_router
 
 # Load settings
 settings = get_settings()
@@ -116,10 +117,10 @@ async def health_check() -> dict[str, str]:
     return {"status": "healthy"}
 
 
-# Note: API routers will be registered here as they are created
-# Example:
-# from api.routes import datasets, statistics, dimensions, fetch
-# app.include_router(datasets.router, prefix="/api/datasets", tags=["datasets"])
+# Register API routers
+app.include_router(datasets_router, prefix="/api/datasets", tags=["datasets"])
+
+# Note: Additional routers will be registered here as they are created
 # app.include_router(statistics.router, prefix="/api/statistics", tags=["statistics"])
 # app.include_router(dimensions.router, prefix="/api", tags=["dimensions"])
 # app.include_router(fetch.router, prefix="/api", tags=["fetch"])
