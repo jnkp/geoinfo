@@ -121,6 +121,14 @@ class Dataset(Base):
         cascade="all, delete-orphan",
     )
 
+    # Relationship to fetch configuration (one-to-one)
+    fetch_config: Mapped[Optional["FetchConfig"]] = relationship(
+        "FetchConfig",
+        back_populates="dataset",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
     # Indexes for efficient querying
     __table_args__ = (
         Index("idx_datasets_time_resolution", "time_resolution"),
