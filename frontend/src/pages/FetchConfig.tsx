@@ -13,85 +13,8 @@
 import { useState, useCallback } from 'react';
 import { useDatasets } from '../api';
 import { TableBrowser } from '../components/TableBrowser';
+import { FetchConfigForm } from '../components/FetchConfigForm';
 import type { StatFinTableInfo } from '../types/api';
-
-/**
- * Placeholder for fetch configuration form (to be implemented in phase 7)
- */
-function ConfigFormPlaceholder({ selectedTable }: { selectedTable: StatFinTableInfo | null }) {
-  return (
-    <div className="card">
-      <h4>New Fetch Configuration</h4>
-      {selectedTable && (
-        <div
-          style={{
-            marginBottom: 'var(--spacing-4)',
-            padding: 'var(--spacing-3)',
-            backgroundColor: 'var(--color-primary-light)',
-            borderRadius: 'var(--radius)',
-            border: '1px solid var(--color-primary)',
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: 'var(--spacing-1)' }}>
-            Selected Table
-          </div>
-          <div>{selectedTable.text}</div>
-          <div
-            style={{
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-gray-600)',
-              fontFamily: 'monospace',
-            }}
-          >
-            {selectedTable.table_id}
-          </div>
-        </div>
-      )}
-      <form onSubmit={(e) => e.preventDefault()}>
-        <div className="form-group">
-          <label className="form-label">Dataset Name</label>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Enter dataset name"
-            defaultValue={selectedTable?.text || ''}
-            disabled
-          />
-        </div>
-        <div className="form-group">
-          <label className="form-label">StatFin Table ID</label>
-          <input
-            type="text"
-            className="form-input"
-            placeholder="e.g., statfin_vaerak_pxt_11ra.px"
-            defaultValue={selectedTable?.table_id || ''}
-            disabled
-          />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Fetch Interval</label>
-          <select className="form-select" disabled>
-            <option>Every 24 hours</option>
-            <option>Every 12 hours</option>
-            <option>Every 6 hours</option>
-            <option>Hourly</option>
-          </select>
-        </div>
-        <div style={{ marginTop: 'var(--spacing-4)' }}>
-          <button type="submit" className="btn btn-primary" disabled>
-            Save Configuration
-          </button>
-        </div>
-      </form>
-      <p
-        className="text-muted"
-        style={{ marginTop: 'var(--spacing-4)', fontSize: 'var(--font-size-sm)' }}
-      >
-        Form functionality will be available in a future update.
-      </p>
-    </div>
-  );
-}
 
 /**
  * Tab component for switching between views
@@ -372,7 +295,14 @@ export default function FetchConfig() {
             gap: 'var(--spacing-4)',
           }}
         >
-          <ConfigFormPlaceholder selectedTable={selectedTable} />
+          <FetchConfigForm
+            selectedTable={selectedTable}
+            onSuccess={() => {
+              setSelectedTable(null);
+              setActiveTab('configurations');
+            }}
+            onClear={() => setSelectedTable(null)}
+          />
           <div className="card">
             <h4>Instructions</h4>
             <ol
