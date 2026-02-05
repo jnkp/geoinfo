@@ -2,29 +2,36 @@
  * Dashboard page component for statistics visualization.
  *
  * This is the main landing page that displays:
- * - Time-series charts
- * - Filter controls (time slider, region, industry)
+ * - Time-series charts with DataChart component
+ * - Filter controls (time slider, region, industry) with FilterPanel
  * - Dataset overview
  *
- * Components like DataChart, TimeSlider, and FilterPanel
- * will be integrated in later phases.
+ * Integrates with FilterContext for shared filter state across components.
  */
 
-import { useDatasets } from '../api';
-import { useStatistics } from '../api';
+import { useDatasets, useStatistics } from '../api';
+import { FilterProvider, useFilterContext } from '../context/FilterContext';
+import { FilterPanel } from '../components/FilterPanel';
+import { DataChart } from '../components/DataChart';
+
+// =============================================================================
+// Types
+// =============================================================================
+
+interface StatsSummaryProps {
+  label: string;
+  value: string | number;
+  description?: string;
+}
+
+// =============================================================================
+// Components
+// =============================================================================
 
 /**
  * Statistics summary card component
  */
-function StatsSummary({
-  label,
-  value,
-  description,
-}: {
-  label: string;
-  value: string | number;
-  description?: string;
-}) {
+function StatsSummary({ label, value, description }: StatsSummaryProps) {
   return (
     <div className="card">
       <div className="text-muted" style={{ fontSize: 'var(--font-size-sm)' }}>
@@ -49,78 +56,34 @@ function StatsSummary({
 }
 
 /**
- * Placeholder for the chart component (to be implemented in phase 6)
+ * Dashboard content component that uses FilterContext.
+ * Must be wrapped in FilterProvider to access filter state.
  */
-function ChartPlaceholder() {
-  return (
-    <div
-      className="card"
-      style={{
-        height: '400px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'var(--color-gray-50)',
-      }}
-    >
-      <div className="text-center text-muted">
-        <div style={{ fontSize: 'var(--font-size-2xl)', marginBottom: 'var(--spacing-2)' }}>
-          📊
-        </div>
-        <p>Time-series chart will be displayed here</p>
-        <p style={{ fontSize: 'var(--font-size-sm)' }}>
-          Select a dataset to visualize statistics
-        </p>
-      </div>
-    </div>
-  );
-}
+function DashboardContent() {
+  const { toQueryParams } = useFilterContext();
 
-/**
- * Placeholder for the filter panel (to be implemented in phase 6)
- */
-function FilterPanelPlaceholder() {
-  return (
-    <div className="card">
-      <h4>Filters</h4>
-      <div style={{ marginTop: 'var(--spacing-4)' }}>
-        <div className="form-group">
-          <label className="form-label">Time Period</label>
-          <select className="form-select" disabled>
-            <option>Time slider (coming soon)</option>
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Region</label>
-          <select className="form-select" disabled>
-            <option>All regions</option>
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Industry</label>
-          <select className="form-select" disabled>
-            <option>All industries</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Main Dashboard page component
- */
-export default function Dashboard() {
   // Fetch datasets summary
-  const { data: datasets, isLoading: datasetsLoading, error: datasetsError } = useDatasets({
+  const {
+    data: datasets,
+    isLoading: datasetsLoading,
+    error: datasetsError,
+  } = useDatasets({
     page: 1,
     page_size: 100,
   });
 
-  // Fetch recent statistics (sample query)
-  const { data: statistics, isLoading: statisticsLoading } = useStatistics({
+  // Build query params from filter context
+  const queryParams = toQueryParams();
+
+  // Fetch statistics based on current filters
+  const {
+    data: statistics,
+    isLoading: statisticsLoading,
+    error: statisticsError,
+  } = useStatistics({
+    ...queryParams,
     page: 1,
-    page_size: 10,
+    page_size: 1000, // Fetch more data for chart visualization
   });
 
   // Show loading state
@@ -176,7 +139,7 @@ export default function Dashboard() {
         <StatsSummary
           label="Data Points"
           value={statisticCount.toLocaleString()}
-          description="Total statistics records"
+          description="Matching statistics records"
         />
         <StatsSummary
           label="Status"
@@ -191,19 +154,34 @@ export default function Dashboard() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 300px',
+          gridTemplateColumns: '1fr 320px',
           gap: 'var(--spacing-4)',
         }}
       >
         {/* Chart Area */}
-        <div>
-          <ChartPlaceholder />
+        <div className="card">
+          <DataChart
+            data={statistics?.items ?? []}
+            loading={statisticsLoading}
+            error={statisticsError?.message ?? null}
+            title="Statistics Over Time"
+            chartType="line"
+            primaryLabel="Value"
+            showLegend={false}
+            showGrid={true}
+          />
         </div>
 
         {/* Filter Sidebar */}
-        <div>
-          <FilterPanelPlaceholder />
-        </div>
+        <FilterPanel
+          showTimeFilter={true}
+          showRegionFilter={true}
+          showIndustryFilter={true}
+          showSummary={true}
+          showClearAll={true}
+          collapsible={true}
+          defaultCollapsed={false}
+        />
       </div>
 
       {/* Dataset List */}
@@ -299,5 +277,21 @@ export default function Dashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+// =============================================================================
+// Main Component
+// =============================================================================
+
+/**
+ * Main Dashboard page component.
+ * Wraps DashboardContent with FilterProvider for filter state management.
+ */
+export default function Dashboard() {
+  return (
+    <FilterProvider syncWithURL={true}>
+      <DashboardContent />
+    </FilterProvider>
   );
 }
