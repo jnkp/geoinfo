@@ -6,48 +6,47 @@
  * - Configure which datasets to fetch
  * - Manage fetch schedules and settings
  *
- * Components like TableBrowser and FetchConfigForm
- * will be integrated in later phases.
+ * Uses TableBrowser component for StatFin table navigation
+ * and provides forms for configuring data fetches.
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useDatasets } from '../api';
-
-/**
- * Placeholder for the StatFin table browser (to be implemented in phase 7)
- */
-function TableBrowserPlaceholder() {
-  return (
-    <div
-      className="card"
-      style={{
-        minHeight: '300px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'var(--color-gray-50)',
-      }}
-    >
-      <div className="text-center text-muted">
-        <div style={{ fontSize: 'var(--font-size-2xl)', marginBottom: 'var(--spacing-2)' }}>
-          🗂️
-        </div>
-        <p>StatFin Table Browser</p>
-        <p style={{ fontSize: 'var(--font-size-sm)' }}>
-          Browse and select tables from StatFin database
-        </p>
-      </div>
-    </div>
-  );
-}
+import { TableBrowser } from '../components/TableBrowser';
+import type { StatFinTableInfo } from '../types/api';
 
 /**
  * Placeholder for fetch configuration form (to be implemented in phase 7)
  */
-function ConfigFormPlaceholder() {
+function ConfigFormPlaceholder({ selectedTable }: { selectedTable: StatFinTableInfo | null }) {
   return (
     <div className="card">
       <h4>New Fetch Configuration</h4>
+      {selectedTable && (
+        <div
+          style={{
+            marginBottom: 'var(--spacing-4)',
+            padding: 'var(--spacing-3)',
+            backgroundColor: 'var(--color-primary-light)',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--color-primary)',
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 'var(--spacing-1)' }}>
+            Selected Table
+          </div>
+          <div>{selectedTable.text}</div>
+          <div
+            style={{
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-gray-600)',
+              fontFamily: 'monospace',
+            }}
+          >
+            {selectedTable.table_id}
+          </div>
+        </div>
+      )}
       <form onSubmit={(e) => e.preventDefault()}>
         <div className="form-group">
           <label className="form-label">Dataset Name</label>
@@ -55,15 +54,17 @@ function ConfigFormPlaceholder() {
             type="text"
             className="form-input"
             placeholder="Enter dataset name"
+            defaultValue={selectedTable?.text || ''}
             disabled
           />
         </div>
         <div className="form-group">
-          <label className="form-label">StatFin Table Path</label>
+          <label className="form-label">StatFin Table ID</label>
           <input
             type="text"
             className="form-input"
-            placeholder="e.g., StatFin/vrm/vaerak"
+            placeholder="e.g., statfin_vaerak_pxt_11ra.px"
+            defaultValue={selectedTable?.table_id || ''}
             disabled
           />
         </div>
@@ -306,12 +307,20 @@ function ConfigList() {
  */
 export default function FetchConfig() {
   const [activeTab, setActiveTab] = useState('configurations');
+  const [selectedTable, setSelectedTable] = useState<StatFinTableInfo | null>(null);
 
   const tabs = [
     { id: 'configurations', label: 'Configurations' },
     { id: 'browse', label: 'Browse StatFin' },
     { id: 'add', label: 'Add New' },
   ];
+
+  // Handle table selection from browser
+  const handleTableSelect = useCallback((table: StatFinTableInfo) => {
+    setSelectedTable(table);
+    // Switch to add tab to configure the selected table
+    setActiveTab('add');
+  }, []);
 
   return (
     <div className="page">
@@ -348,9 +357,10 @@ export default function FetchConfig() {
             <h4>Browse StatFin Database</h4>
             <p className="text-muted">
               Explore available statistical tables from Statistics Finland's database.
+              Click on a table to configure it for data fetching.
             </p>
           </div>
-          <TableBrowserPlaceholder />
+          <TableBrowser onTableSelect={handleTableSelect} />
         </div>
       )}
 
@@ -362,7 +372,7 @@ export default function FetchConfig() {
             gap: 'var(--spacing-4)',
           }}
         >
-          <ConfigFormPlaceholder />
+          <ConfigFormPlaceholder selectedTable={selectedTable} />
           <div className="card">
             <h4>Instructions</h4>
             <ol

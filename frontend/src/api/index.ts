@@ -5,9 +5,11 @@
  * - API client and fetch utilities
  * - Dataset query hooks
  * - Statistics query hooks
+ * - StatFin table browsing hooks
+ * - Fetch configuration hooks
  *
  * @example
- * import { useDatasets, useStatistics, apiClient } from '@/api';
+ * import { useDatasets, useStatistics, useStatFinTables, apiClient } from '@/api';
  */
 
 // API client and utilities
@@ -39,3 +41,18 @@ export {
   useDeleteStatistic,
   statisticsKeys,
 } from './statistics';
+
+// StatFin table browsing and fetch configuration hooks
+export {
+  useStatFinTables,
+  useStatFinTableMetadata,
+  useFetchConfigs,
+  useFetchConfig,
+  useCreateFetchConfig,
+  useUpdateFetchConfig,
+  useDeleteFetchConfig,
+  statfinKeys,
+  fetchConfigKeys,
+  type StatFinTableListParams,
+  type FetchConfigListParams,
+} from './fetch-config';

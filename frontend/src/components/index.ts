@@ -4,7 +4,7 @@
  * This module re-exports all reusable components used across the application.
  *
  * @example
- * import { TimeSlider, IndustryFilter } from '@/components';
+ * import { TimeSlider, IndustryFilter, TableBrowser } from '@/components';
  */
 
 // Time filtering components
@@ -22,3 +22,7 @@ export type { DataChartProps, ChartType, ChartDataPoint } from './DataChart';
 // Map components
 export { RegionMap } from './RegionMap';
 export type { RegionMapProps } from './RegionMap';
+
+// StatFin table browsing components
+export { TableBrowser } from './TableBrowser';
+export type { TableBrowserProps } from './TableBrowser';
