@@ -16,8 +16,8 @@ import { useDatasets, statisticsKeys, apiClient, buildQueryString } from '../api
 import { FilterProvider, useFilterContext } from '../context/FilterContext';
 import { FilterPanel } from '../components/FilterPanel';
 import { DataChart } from '../components/DataChart';
-import { DatasetSelector, createDatasetColorMap, DATASET_COLORS } from '../components/DatasetSelector';
-import type { StatisticListResponse, StatisticResponse } from '../types/api';
+import { DatasetSelector, createDatasetColorMap } from '../components/DatasetSelector';
+import type { StatisticListResponse } from '../types/api';
 
 // =============================================================================
 // Types
@@ -33,7 +33,7 @@ interface StatsSummaryProps {
 // Styles
 // =============================================================================
 
-const styles = {
+const _styles = {
   sidebarSection: {
     marginTop: 'var(--spacing-4)',
     paddingTop: 'var(--spacing-4)',

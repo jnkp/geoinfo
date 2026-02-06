@@ -172,7 +172,7 @@ function RegionInfoPanel({ regionCode }: { regionCode: string | null }) {
  */
 export default function MapView() {
   const [regionLevel, setRegionLevel] = useState<RegionLevel>('maakunta');
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [selectedRegion, _setSelectedRegion] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(2023);
 
   // Fetch statistics for the map

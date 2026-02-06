@@ -21,7 +21,6 @@ import { useMemo, useCallback } from 'react';
 import { useStatistics } from '../api/statistics';
 import {
   useFilterContext,
-  type FilterState,
   type TimeResolution,
   type RegionLevel,
   type IndustryLevel,

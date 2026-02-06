@@ -61,12 +61,13 @@ export interface RegionMapProps {
 }
 
 /** Region feature properties from GeoJSON */
-interface RegionProperties extends GeoJsonProperties {
+interface RegionProperties {
   code: string;
   name_fi: string;
   name_sv?: string;
   name_en?: string;
   level: RegionLevel;
+  [key: string]: any;
 }
 
 /** Extended feature type with our properties */
