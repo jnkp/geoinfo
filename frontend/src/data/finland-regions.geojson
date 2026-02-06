@@ -1,0 +1,708 @@
+{
+  "type": "FeatureCollection",
+  "name": "Finnish Regions (Maakunnat)",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:EPSG::4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK01",
+        "name_fi": "Uusimaa",
+        "name_sv": "Nyland",
+        "name_en": "Uusimaa",
+        "level": "maakunta",
+        "capital": "Helsinki",
+        "population": 1703556,
+        "area_km2": 9568
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [24.0, 59.8],
+            [24.5, 59.75],
+            [25.0, 59.78],
+            [25.5, 59.82],
+            [25.8, 59.8],
+            [26.0, 59.95],
+            [26.2, 60.3],
+            [26.0, 60.5],
+            [25.7, 60.65],
+            [25.5, 60.8],
+            [25.2, 60.85],
+            [24.8, 60.9],
+            [24.5, 60.85],
+            [24.2, 60.75],
+            [23.8, 60.5],
+            [23.6, 60.25],
+            [23.5, 60.0],
+            [23.7, 59.85],
+            [24.0, 59.8]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK02",
+        "name_fi": "Varsinais-Suomi",
+        "name_sv": "Egentliga Finland",
+        "name_en": "Southwest Finland",
+        "level": "maakunta",
+        "capital": "Turku",
+        "population": 481403,
+        "area_km2": 10628
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [21.0, 59.8],
+            [21.5, 59.75],
+            [22.0, 59.8],
+            [22.5, 59.85],
+            [23.0, 59.8],
+            [23.5, 60.0],
+            [23.8, 60.5],
+            [23.5, 60.75],
+            [23.0, 61.0],
+            [22.5, 61.05],
+            [22.0, 61.0],
+            [21.5, 61.0],
+            [21.0, 60.8],
+            [20.7, 60.5],
+            [20.5, 60.2],
+            [20.7, 59.95],
+            [21.0, 59.8]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK04",
+        "name_fi": "Satakunta",
+        "name_sv": "Satakunta",
+        "name_en": "Satakunta",
+        "level": "maakunta",
+        "capital": "Pori",
+        "population": 217499,
+        "area_km2": 7822
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [21.0, 61.0],
+            [21.5, 61.0],
+            [22.0, 61.0],
+            [22.5, 61.05],
+            [23.0, 61.0],
+            [23.0, 61.5],
+            [23.0, 62.0],
+            [22.5, 62.15],
+            [22.0, 62.3],
+            [21.5, 62.15],
+            [21.0, 62.0],
+            [20.7, 61.7],
+            [20.5, 61.5],
+            [20.7, 61.2],
+            [21.0, 61.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK05",
+        "name_fi": "Kanta-Hame",
+        "name_sv": "Egentliga Tavastland",
+        "name_en": "Tavastia Proper",
+        "level": "maakunta",
+        "capital": "Hameenlinna",
+        "population": 171221,
+        "area_km2": 5199
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [23.8, 60.5],
+            [24.2, 60.55],
+            [24.5, 60.7],
+            [24.8, 60.9],
+            [25.0, 61.1],
+            [25.0, 61.3],
+            [24.7, 61.4],
+            [24.2, 61.5],
+            [23.8, 61.4],
+            [23.5, 61.2],
+            [23.3, 61.0],
+            [23.0, 61.0],
+            [23.3, 60.75],
+            [23.5, 60.55],
+            [23.8, 60.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK06",
+        "name_fi": "Pirkanmaa",
+        "name_sv": "Birkaland",
+        "name_en": "Pirkanmaa",
+        "level": "maakunta",
+        "capital": "Tampere",
+        "population": 525235,
+        "area_km2": 12585
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [23.0, 61.0],
+            [23.3, 61.0],
+            [23.5, 61.2],
+            [23.8, 61.4],
+            [24.2, 61.5],
+            [24.5, 61.8],
+            [24.5, 62.2],
+            [24.2, 62.4],
+            [23.8, 62.5],
+            [23.5, 62.5],
+            [23.0, 62.3],
+            [22.5, 62.2],
+            [22.0, 62.3],
+            [22.2, 62.0],
+            [23.0, 62.0],
+            [23.0, 61.5],
+            [23.0, 61.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK07",
+        "name_fi": "Paijat-Hame",
+        "name_sv": "Paijanne-Tavastland",
+        "name_en": "Paijanne Tavastia",
+        "level": "maakunta",
+        "capital": "Lahti",
+        "population": 200931,
+        "area_km2": 5125
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [24.8, 60.9],
+            [25.2, 60.85],
+            [25.5, 60.8],
+            [25.8, 60.9],
+            [26.0, 61.2],
+            [25.8, 61.4],
+            [25.8, 61.6],
+            [25.5, 61.55],
+            [25.0, 61.3],
+            [25.0, 61.1],
+            [24.8, 60.9]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK08",
+        "name_fi": "Kymenlaakso",
+        "name_sv": "Kymmenedalen",
+        "name_en": "Kymenlaakso",
+        "level": "maakunta",
+        "capital": "Kouvola",
+        "population": 167164,
+        "area_km2": 5143
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [26.0, 60.5],
+            [26.2, 60.3],
+            [26.5, 60.35],
+            [27.0, 60.4],
+            [27.5, 60.5],
+            [27.7, 60.7],
+            [27.8, 61.0],
+            [27.5, 61.15],
+            [27.0, 61.3],
+            [26.5, 61.25],
+            [26.0, 61.2],
+            [25.8, 60.9],
+            [26.0, 60.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK09",
+        "name_fi": "Etela-Karjala",
+        "name_sv": "Sodra Karelen",
+        "name_en": "South Karelia",
+        "level": "maakunta",
+        "capital": "Lappeenranta",
+        "population": 127655,
+        "area_km2": 5329
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [27.5, 60.5],
+            [28.0, 60.55],
+            [28.5, 60.7],
+            [29.0, 60.8],
+            [29.3, 61.1],
+            [29.5, 61.5],
+            [29.2, 61.7],
+            [28.5, 61.8],
+            [28.0, 61.5],
+            [27.5, 61.3],
+            [27.5, 61.15],
+            [27.8, 61.0],
+            [27.7, 60.7],
+            [27.5, 60.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK10",
+        "name_fi": "Etela-Savo",
+        "name_sv": "Sodra Savolax",
+        "name_en": "South Savo",
+        "level": "maakunta",
+        "capital": "Mikkeli",
+        "population": 142210,
+        "area_km2": 14285
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [26.0, 61.2],
+            [26.5, 61.25],
+            [27.0, 61.3],
+            [27.5, 61.3],
+            [28.0, 61.5],
+            [28.5, 61.8],
+            [28.8, 62.2],
+            [29.0, 62.5],
+            [28.5, 62.7],
+            [27.5, 62.8],
+            [27.0, 62.7],
+            [26.5, 62.5],
+            [26.0, 62.5],
+            [25.8, 62.2],
+            [25.8, 61.6],
+            [26.0, 61.2]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK11",
+        "name_fi": "Pohjois-Savo",
+        "name_sv": "Norra Savolax",
+        "name_en": "North Savo",
+        "level": "maakunta",
+        "capital": "Kuopio",
+        "population": 245648,
+        "area_km2": 16768
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [26.0, 62.5],
+            [26.5, 62.5],
+            [27.0, 62.7],
+            [27.5, 62.8],
+            [28.2, 63.2],
+            [28.5, 63.5],
+            [28.3, 63.8],
+            [28.0, 64.0],
+            [27.5, 64.0],
+            [26.5, 64.0],
+            [26.0, 63.8],
+            [25.5, 63.5],
+            [25.5, 63.0],
+            [25.5, 62.8],
+            [25.8, 62.5],
+            [26.0, 62.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK12",
+        "name_fi": "Pohjois-Karjala",
+        "name_sv": "Norra Karelen",
+        "name_en": "North Karelia",
+        "level": "maakunta",
+        "capital": "Joensuu",
+        "population": 162352,
+        "area_km2": 17762
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [28.5, 61.8],
+            [29.2, 61.7],
+            [29.5, 61.5],
+            [30.0, 61.7],
+            [30.5, 62.0],
+            [31.0, 62.0],
+            [31.3, 62.5],
+            [31.5, 63.0],
+            [31.5, 63.5],
+            [31.0, 63.8],
+            [30.5, 64.0],
+            [30.0, 63.8],
+            [29.5, 63.6],
+            [28.5, 63.5],
+            [28.8, 63.0],
+            [29.0, 62.5],
+            [28.8, 62.2],
+            [28.5, 61.8]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK13",
+        "name_fi": "Keski-Suomi",
+        "name_sv": "Mellersta Finland",
+        "name_en": "Central Finland",
+        "level": "maakunta",
+        "capital": "Jyvaskyla",
+        "population": 275502,
+        "area_km2": 16704
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [24.5, 62.2],
+            [24.7, 62.0],
+            [25.0, 61.8],
+            [25.5, 61.55],
+            [25.8, 61.6],
+            [25.8, 62.2],
+            [26.0, 62.5],
+            [25.8, 62.7],
+            [25.5, 63.0],
+            [25.5, 63.5],
+            [25.0, 63.6],
+            [24.5, 63.5],
+            [24.0, 63.3],
+            [23.5, 63.0],
+            [23.5, 62.5],
+            [23.8, 62.5],
+            [24.2, 62.4],
+            [24.5, 62.2]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK14",
+        "name_fi": "Etela-Pohjanmaa",
+        "name_sv": "Sodra Osterbotten",
+        "name_en": "South Ostrobothnia",
+        "level": "maakunta",
+        "capital": "Seinajoki",
+        "population": 189857,
+        "area_km2": 13444
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [21.5, 62.2],
+            [22.0, 62.15],
+            [22.5, 62.2],
+            [23.0, 62.3],
+            [23.5, 62.5],
+            [23.5, 63.0],
+            [23.2, 63.3],
+            [22.5, 63.5],
+            [22.0, 63.4],
+            [21.5, 63.3],
+            [21.2, 63.0],
+            [21.0, 62.8],
+            [21.2, 62.5],
+            [21.5, 62.2]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK15",
+        "name_fi": "Pohjanmaa",
+        "name_sv": "Osterbotten",
+        "name_en": "Ostrobothnia",
+        "level": "maakunta",
+        "capital": "Vaasa",
+        "population": 181442,
+        "area_km2": 7672
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [21.0, 62.8],
+            [21.2, 63.0],
+            [21.5, 63.3],
+            [21.5, 63.6],
+            [21.5, 64.0],
+            [21.2, 64.15],
+            [21.0, 64.2],
+            [20.7, 64.0],
+            [20.5, 63.5],
+            [20.5, 63.2],
+            [20.7, 63.0],
+            [21.0, 62.8]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK16",
+        "name_fi": "Keski-Pohjanmaa",
+        "name_sv": "Mellersta Osterbotten",
+        "name_en": "Central Ostrobothnia",
+        "level": "maakunta",
+        "capital": "Kokkola",
+        "population": 68587,
+        "area_km2": 5019
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [22.5, 63.5],
+            [23.2, 63.3],
+            [23.5, 63.4],
+            [24.0, 63.5],
+            [24.5, 63.5],
+            [24.5, 63.8],
+            [24.5, 64.2],
+            [24.0, 64.4],
+            [23.5, 64.5],
+            [23.0, 64.5],
+            [22.5, 64.3],
+            [22.0, 64.2],
+            [21.5, 64.0],
+            [21.5, 63.6],
+            [22.0, 63.4],
+            [22.5, 63.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK17",
+        "name_fi": "Pohjois-Pohjanmaa",
+        "name_sv": "Norra Osterbotten",
+        "name_en": "North Ostrobothnia",
+        "level": "maakunta",
+        "capital": "Oulu",
+        "population": 415057,
+        "area_km2": 35508
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [24.5, 64.2],
+            [25.0, 64.0],
+            [25.5, 63.8],
+            [26.0, 63.8],
+            [26.5, 64.0],
+            [27.5, 64.0],
+            [28.0, 64.0],
+            [28.5, 64.3],
+            [29.0, 65.0],
+            [28.5, 65.5],
+            [28.0, 65.8],
+            [27.5, 66.0],
+            [26.5, 66.0],
+            [25.5, 66.0],
+            [25.0, 66.0],
+            [24.5, 65.8],
+            [24.0, 65.5],
+            [23.5, 65.5],
+            [23.2, 65.0],
+            [23.0, 64.5],
+            [23.5, 64.5],
+            [24.0, 64.4],
+            [24.5, 64.2]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK18",
+        "name_fi": "Kainuu",
+        "name_sv": "Kajanaland",
+        "name_en": "Kainuu",
+        "level": "maakunta",
+        "capital": "Kajaani",
+        "population": 72335,
+        "area_km2": 21567
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [26.5, 64.0],
+            [27.5, 64.0],
+            [28.0, 64.0],
+            [28.5, 63.5],
+            [29.5, 63.6],
+            [30.0, 63.8],
+            [30.5, 64.0],
+            [30.2, 64.5],
+            [30.0, 65.0],
+            [30.0, 65.5],
+            [29.5, 65.3],
+            [29.0, 65.0],
+            [28.5, 64.3],
+            [28.0, 64.0],
+            [27.5, 64.0],
+            [26.5, 64.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK19",
+        "name_fi": "Lappi",
+        "name_sv": "Lappland",
+        "name_en": "Lapland",
+        "level": "maakunta",
+        "capital": "Rovaniemi",
+        "population": 177597,
+        "area_km2": 92667
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [23.5, 65.5],
+            [24.0, 65.5],
+            [24.5, 65.8],
+            [25.0, 66.0],
+            [25.5, 66.0],
+            [26.5, 66.0],
+            [27.5, 66.0],
+            [28.0, 65.8],
+            [28.5, 65.5],
+            [29.0, 65.0],
+            [29.5, 65.3],
+            [30.0, 65.5],
+            [29.8, 66.5],
+            [29.5, 67.5],
+            [29.5, 68.0],
+            [29.0, 68.5],
+            [28.5, 69.0],
+            [28.0, 69.5],
+            [27.0, 69.8],
+            [26.0, 70.0],
+            [25.0, 69.8],
+            [24.0, 69.5],
+            [23.0, 69.2],
+            [22.0, 69.0],
+            [21.5, 68.5],
+            [21.0, 68.0],
+            [20.8, 67.5],
+            [20.5, 67.0],
+            [20.8, 66.5],
+            [21.2, 66.2],
+            [21.5, 66.0],
+            [22.0, 65.8],
+            [22.5, 65.6],
+            [23.0, 65.5],
+            [23.5, 65.5]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MK21",
+        "name_fi": "Ahvenanmaa",
+        "name_sv": "Aland",
+        "name_en": "Aland Islands",
+        "level": "maakunta",
+        "capital": "Mariehamn",
+        "population": 30415,
+        "area_km2": 1553
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [19.5, 60.0],
+              [19.8, 59.9],
+              [20.2, 59.95],
+              [20.4, 60.15],
+              [20.3, 60.35],
+              [20.0, 60.45],
+              [19.7, 60.4],
+              [19.5, 60.25],
+              [19.5, 60.0]
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
