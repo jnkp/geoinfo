@@ -62,17 +62,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: production
     container_name: geoinfo-frontend
     restart: unless-stopped
     environment:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+      - "${FRONTEND_PORT:-5173}:80"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     profiles:
       - full
 
