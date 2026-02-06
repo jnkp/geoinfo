@@ -13,6 +13,8 @@ And StatFin API browsing endpoints:
 All routes use async database sessions and return appropriate HTTP status codes.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,9 +28,12 @@ from api.schemas import (
     MessageResponse,
     StatFinTableInfo,
     StatFinTableListResponse,
+    StatFinTableMetadata,
 )
 from models import Dataset, FetchConfig, get_db
 from services.statfin import StatFinClient, StatFinError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -140,6 +145,9 @@ async def create_fetch_config(
 ) -> FetchConfigResponse:
     """Create a new fetch configuration.
 
+    If the dataset doesn't exist, it will be automatically created using
+    metadata fetched from the StatFin API.
+
     Args:
         config_data: Fetch configuration creation data
         db: Database session
@@ -148,17 +156,91 @@ async def create_fetch_config(
         FetchConfigResponse with created configuration details
 
     Raises:
-        HTTPException: 404 if dataset not found
+        HTTPException: 404 if StatFin table not found
         HTTPException: 409 if fetch configuration already exists for dataset
+        HTTPException: 500 for StatFin API errors
     """
-    # Check if dataset exists
+    # Check if dataset exists, create if not
     dataset_query = select(Dataset).where(Dataset.id == config_data.dataset_id)
     dataset_result = await db.execute(dataset_query)
-    if dataset_result.scalar_one_or_none() is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Dataset with id '{config_data.dataset_id}' not found",
+    dataset = dataset_result.scalar_one_or_none()
+
+    if dataset is None:
+        # Auto-create dataset from StatFin metadata
+        # Extract statfin_table_id from dataset_id
+        # The dataset_id was constructed from table_id in the frontend
+        # We need to find the original table_id with .px extension
+        statfin_table_id = None
+
+        # Try to find the table by browsing StatFin
+        # The table_id format is typically: "statfin_category_pxt_code.px"
+        # The dataset_id has underscores instead of slashes and no extension
+        # For now, we'll need the frontend to pass the original table_id
+        # But we can infer it by adding .px extension
+        potential_table_ids = [
+            config_data.dataset_id + ".px",
+            config_data.dataset_id,
+        ]
+
+        client = StatFinClient()
+        metadata = None
+        try:
+            async with client:
+                # Try each potential table ID
+                for tid in potential_table_ids:
+                    try:
+                        metadata = await client.get_table_metadata(tid)
+                        statfin_table_id = tid
+                        break
+                    except StatFinError:
+                        continue
+
+                if metadata is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Could not find StatFin table for dataset_id '{config_data.dataset_id}'. "
+                               f"Please ensure the dataset_id matches a valid StatFin table.",
+                    )
+        except StatFinError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"StatFin API error: {e.message}",
+            )
+
+        # Detect dimensions
+        dimension_names = [dim.name.lower() for dim in metadata.dimensions]
+        has_region_dimension = any(
+            name in dimension_names for name in ["alue", "kunta", "maakunta", "seutukunta"]
         )
+        has_industry_dimension = any(
+            name in dimension_names for name in ["toimiala", "tol", "industry"]
+        )
+
+        # Detect time resolution from dimension names
+        time_resolution = "year"  # default
+        for dim in metadata.dimensions:
+            dim_name = dim.name.lower()
+            if "kuukausi" in dim_name or "month" in dim_name:
+                time_resolution = "month"
+                break
+            elif "neljännes" in dim_name or "quarter" in dim_name:
+                time_resolution = "quarter"
+                break
+
+        # Create dataset
+        dataset = Dataset(
+            id=config_data.dataset_id,
+            statfin_table_id=statfin_table_id,
+            name_fi=metadata.title,
+            description=metadata.title,
+            source_url=f"https://pxdata.stat.fi/PxWeb/pxweb/fi/StatFin/{statfin_table_id}",
+            time_resolution=time_resolution,
+            has_region_dimension=has_region_dimension,
+            has_industry_dimension=has_industry_dimension,
+        )
+        db.add(dataset)
+        await db.flush()
+        logger.info(f"Auto-created dataset '{config_data.dataset_id}' from StatFin table '{statfin_table_id}'")
 
     # Check if fetch configuration already exists for this dataset
     existing_query = select(FetchConfig).where(
@@ -323,4 +405,68 @@ async def list_statfin_tables(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch tables from StatFin API: {e.message}",
+        )
+
+
+@statfin_router.get(
+    "/tables/{table_id:path}/metadata",
+    response_model=StatFinTableMetadata,
+    summary="Get StatFin table metadata",
+    description="Fetch metadata for a specific StatFin table including dimensions and values.",
+    responses={
+        404: {"model": ErrorResponse, "description": "Table not found"},
+        500: {"model": ErrorResponse, "description": "StatFin API error"},
+    },
+)
+async def get_statfin_table_metadata(
+    table_id: str,
+) -> StatFinTableMetadata:
+    """Get metadata for a specific StatFin table.
+
+    This endpoint fetches detailed metadata for a StatFin table, including:
+    - Table title and description
+    - Available dimensions (e.g., year, region, industry)
+    - Dimension values with their codes and labels
+    - Last update timestamp
+
+    Args:
+        table_id: StatFin table identifier (e.g., "statfin_ashi_pxt_13mx.px")
+
+    Returns:
+        StatFinTableMetadata with dimensions and values
+
+    Raises:
+        HTTPException: 404 if table not found, 500 for API errors
+    """
+    client = StatFinClient()
+    try:
+        async with client:
+            metadata = await client.get_table_metadata(table_id)
+
+            return StatFinTableMetadata(
+                table_id=metadata.table_id,
+                title=metadata.title,
+                dimensions=[
+                    {
+                        "name": dim.name,
+                        "text": dim.text,
+                        "values": [
+                            {"code": val.code, "text": val.text}
+                            for val in dim.values
+                        ],
+                    }
+                    for dim in metadata.dimensions
+                ],
+                last_updated=metadata.last_updated,
+                source=metadata.source,
+            )
+    except StatFinError as e:
+        if e.status_code == 404:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"StatFin table '{table_id}' not found",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"StatFin API error: {e.message}",
         )
