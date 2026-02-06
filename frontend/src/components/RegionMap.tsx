@@ -23,7 +23,7 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
 import type { Map as LeafletMap, PathOptions, Layer } from 'leaflet';
-import type { Feature, Geometry, GeoJsonProperties, FeatureCollection } from 'geojson';
+import type { Feature, Geometry, FeatureCollection } from 'geojson';
 import { useFilterContext, type RegionLevel } from '../context/FilterContext';
 
 // Import Leaflet CSS (required for proper map rendering)
