@@ -642,6 +642,350 @@ class TestCompleteE2EFlow:
 
 
 # =============================================================================
+# Data Linkage Tests
+# =============================================================================
+
+
+class TestDataLinkageAcrossDatasets:
+    """Test data linkage functionality across multiple datasets.
+
+    Verifies that the /api/statistics/linked endpoint correctly combines
+    data from multiple datasets on shared dimensions (time, region, industry).
+    """
+
+    @pytest.mark.asyncio
+    async def test_linked_data_combines_on_shared_dimensions(self, mock_settings, db_session):
+        """
+        Test that data from two datasets combines correctly on shared dimensions.
+
+        Verification steps:
+        1. Create two datasets with overlapping time/region dimensions
+        2. Store statistics for both datasets
+        3. Query linked data endpoint
+        4. Verify data combines correctly on shared coordinates
+        """
+        with patch("config.get_settings", return_value=mock_settings):
+            with patch("models.database.get_db") as mock_get_db:
+                async def override_get_db():
+                    yield db_session
+
+                mock_get_db.return_value = override_get_db()
+
+                from main import app
+                from models import Dataset, Statistic, Region
+
+                logger.info("Step 1: Creating two related datasets...")
+
+                # Create test region
+                region = Region(
+                    code="MK01",
+                    name_fi="Uusimaa",
+                    level="maakunta",
+                )
+                db_session.add(region)
+
+                # Create Dataset 1: Population data
+                dataset1 = Dataset(
+                    id="linkage-test-population",
+                    name_fi="Väestö",
+                    name_en="Population",
+                    statfin_table_id="test/population.px",
+                    time_resolution="year",
+                    has_region_dimension=True,
+                )
+                db_session.add(dataset1)
+
+                # Create Dataset 2: Employment data
+                dataset2 = Dataset(
+                    id="linkage-test-employment",
+                    name_fi="Työllisyys",
+                    name_en="Employment",
+                    statfin_table_id="test/employment.px",
+                    time_resolution="year",
+                    has_region_dimension=True,
+                )
+                db_session.add(dataset2)
+
+                logger.info("Step 2: Creating statistics with shared dimensions...")
+
+                # Create statistics for Dataset 1 (Population)
+                # Data for 2022 and 2023, region MK01
+                population_data = [
+                    {"year": 2022, "region_code": "MK01", "value": 1700000, "value_label": "Population"},
+                    {"year": 2023, "region_code": "MK01", "value": 1750000, "value_label": "Population"},
+                    {"year": 2022, "region_code": None, "value": 5500000, "value_label": "Population"},
+                    {"year": 2023, "region_code": None, "value": 5550000, "value_label": "Population"},
+                ]
+
+                for data in population_data:
+                    stat = Statistic(
+                        dataset_id=dataset1.id,
+                        year=data["year"],
+                        region_code=data["region_code"],
+                        value=data["value"],
+                        value_label=data["value_label"],
+                        unit="persons",
+                    )
+                    db_session.add(stat)
+
+                # Create statistics for Dataset 2 (Employment)
+                # Data for same years and region - this creates the linkage
+                employment_data = [
+                    {"year": 2022, "region_code": "MK01", "value": 850000, "value_label": "Employed"},
+                    {"year": 2023, "region_code": "MK01", "value": 870000, "value_label": "Employed"},
+                    {"year": 2022, "region_code": None, "value": 2700000, "value_label": "Employed"},
+                    {"year": 2023, "region_code": None, "value": 2750000, "value_label": "Employed"},
+                ]
+
+                for data in employment_data:
+                    stat = Statistic(
+                        dataset_id=dataset2.id,
+                        year=data["year"],
+                        region_code=data["region_code"],
+                        value=data["value"],
+                        value_label=data["value_label"],
+                        unit="persons",
+                    )
+                    db_session.add(stat)
+
+                await db_session.flush()
+
+                logger.info("Step 3: Querying linked data endpoint...")
+
+                transport = ASGITransport(app=app)
+                async with AsyncClient(transport=transport, base_url="http://test") as client:
+                    # Query linked data for both datasets
+                    response = await client.get(
+                        "/api/statistics/linked"
+                        f"?datasets={dataset1.id},{dataset2.id}"
+                    )
+
+                    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+                    data = response.json()
+
+                    logger.info("Step 4: Verifying data linkage...")
+
+                    # Verify response structure
+                    assert "datasets" in data
+                    assert "items" in data
+                    assert dataset1.id in data["datasets"]
+                    assert dataset2.id in data["datasets"]
+
+                    # Should have 4 linked data points (2 years × 2 region combinations)
+                    assert len(data["items"]) == 4, f"Expected 4 linked items, got {len(data['items'])}"
+
+                    # Verify each linked item has values from both datasets
+                    for item in data["items"]:
+                        assert "values" in item
+                        assert "year" in item
+
+                        # Each item should have values from both datasets
+                        # (if they share the same dimensional coordinates)
+                        values = item["values"]
+
+                        # Verify the linked item has values keyed by dataset_id
+                        if dataset1.id in values and dataset2.id in values:
+                            # This is a fully linked data point
+                            population_value = values[dataset1.id]
+                            employment_value = values[dataset2.id]
+
+                            # Verify values are reasonable
+                            assert population_value is not None
+                            assert employment_value is not None
+                            assert employment_value < population_value, \
+                                "Employment should be less than population"
+
+                            logger.info(
+                                f"Linked data point: Year={item['year']}, "
+                                f"Region={item.get('region_code', 'All')}, "
+                                f"Population={population_value}, Employment={employment_value}"
+                            )
+
+                    # Test filtering by year
+                    response = await client.get(
+                        f"/api/statistics/linked?datasets={dataset1.id},{dataset2.id}&year=2023"
+                    )
+                    assert response.status_code == 200
+                    filtered_data = response.json()
+
+                    # Should have 2 items for 2023 (with and without region)
+                    assert len(filtered_data["items"]) == 2
+                    for item in filtered_data["items"]:
+                        assert item["year"] == 2023
+
+                    # Test filtering by region
+                    response = await client.get(
+                        f"/api/statistics/linked?datasets={dataset1.id},{dataset2.id}&region_code=MK01"
+                    )
+                    assert response.status_code == 200
+                    region_data = response.json()
+
+                    # Should have 2 items for MK01 (2022 and 2023)
+                    assert len(region_data["items"]) == 2
+                    for item in region_data["items"]:
+                        assert item["region_code"] == "MK01"
+
+                logger.info("Data linkage verification passed!")
+                logger.info(f"Successfully verified {len(data['items'])} linked data points across 2 datasets")
+
+    @pytest.mark.asyncio
+    async def test_linked_data_with_different_dimensions(self, mock_settings, db_session):
+        """
+        Test that datasets with different dimension coverage still work.
+
+        Verifies:
+        - Datasets with partial overlap still combine correctly
+        - Missing values are handled gracefully
+        """
+        with patch("config.get_settings", return_value=mock_settings):
+            with patch("models.database.get_db") as mock_get_db:
+                async def override_get_db():
+                    yield db_session
+
+                mock_get_db.return_value = override_get_db()
+
+                from main import app
+                from models import Dataset, Statistic
+
+                # Create Dataset 1 with only yearly data
+                dataset1 = Dataset(
+                    id="partial-test-yearly",
+                    name_fi="Vuosidata",
+                    statfin_table_id="test/yearly.px",
+                    time_resolution="year",
+                )
+                db_session.add(dataset1)
+
+                # Create Dataset 2 with quarterly data
+                dataset2 = Dataset(
+                    id="partial-test-quarterly",
+                    name_fi="Neljännesvuosidata",
+                    statfin_table_id="test/quarterly.px",
+                    time_resolution="quarter",
+                )
+                db_session.add(dataset2)
+
+                # Dataset 1: Only year 2023
+                stat1 = Statistic(
+                    dataset_id=dataset1.id,
+                    year=2023,
+                    quarter=None,
+                    value=100,
+                    value_label="Annual Value",
+                )
+                db_session.add(stat1)
+
+                # Dataset 2: Q1 2023
+                stat2 = Statistic(
+                    dataset_id=dataset2.id,
+                    year=2023,
+                    quarter=1,
+                    value=25,
+                    value_label="Quarterly Value",
+                )
+                db_session.add(stat2)
+
+                # Dataset 2: Q2 2023
+                stat3 = Statistic(
+                    dataset_id=dataset2.id,
+                    year=2023,
+                    quarter=2,
+                    value=27,
+                    value_label="Quarterly Value",
+                )
+                db_session.add(stat3)
+
+                await db_session.flush()
+
+                transport = ASGITransport(app=app)
+                async with AsyncClient(transport=transport, base_url="http://test") as client:
+                    response = await client.get(
+                        f"/api/statistics/linked?datasets={dataset1.id},{dataset2.id}"
+                    )
+
+                    assert response.status_code == 200
+                    data = response.json()
+
+                    # Should have 3 unique dimension combinations:
+                    # (2023, None) - only dataset1
+                    # (2023, Q1) - only dataset2
+                    # (2023, Q2) - only dataset2
+                    assert len(data["items"]) == 3
+
+                    # Verify partial linkage works
+                    for item in data["items"]:
+                        values = item["values"]
+
+                        if item["quarter"] is None:
+                            # Only dataset1 has this
+                            assert dataset1.id in values
+                        else:
+                            # Only dataset2 has quarters
+                            assert dataset2.id in values
+
+                logger.info("Partial dimension linkage test passed!")
+
+    @pytest.mark.asyncio
+    async def test_linked_data_metadata_included(self, mock_settings, db_session):
+        """
+        Test that metadata (unit, value_label) is correctly included in linked data.
+        """
+        with patch("config.get_settings", return_value=mock_settings):
+            with patch("models.database.get_db") as mock_get_db:
+                async def override_get_db():
+                    yield db_session
+
+                mock_get_db.return_value = override_get_db()
+
+                from main import app
+                from models import Dataset, Statistic
+
+                # Create dataset with metadata
+                dataset = Dataset(
+                    id="metadata-test",
+                    name_fi="Metadata Test",
+                    statfin_table_id="test/metadata.px",
+                    time_resolution="year",
+                )
+                db_session.add(dataset)
+
+                stat = Statistic(
+                    dataset_id=dataset.id,
+                    year=2023,
+                    value=42.5,
+                    value_label="Test Metric",
+                    unit="percent",
+                    data_quality="final",
+                )
+                db_session.add(stat)
+
+                await db_session.flush()
+
+                transport = ASGITransport(app=app)
+                async with AsyncClient(transport=transport, base_url="http://test") as client:
+                    response = await client.get(
+                        f"/api/statistics/linked?datasets={dataset.id}"
+                    )
+
+                    assert response.status_code == 200
+                    data = response.json()
+
+                    assert len(data["items"]) == 1
+                    item = data["items"][0]
+
+                    # Verify metadata is included
+                    assert "metadata" in item
+                    assert dataset.id in item["metadata"]
+
+                    metadata = item["metadata"][dataset.id]
+                    assert metadata["unit"] == "percent"
+                    assert metadata["value_label"] == "Test Metric"
+                    assert metadata["data_quality"] == "final"
+
+                logger.info("Metadata inclusion test passed!")
+
+
+# =============================================================================
 # Verification Helper Functions
 # =============================================================================
 
