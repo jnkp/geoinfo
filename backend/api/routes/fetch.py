@@ -172,15 +172,15 @@ async def create_fetch_config(
         # We need to find the original table_id with .px extension
         statfin_table_id = None
 
-        # Try to find the table by browsing StatFin
-        # The table_id format is typically: "statfin_category_pxt_code.px"
-        # The dataset_id has underscores instead of slashes and no extension
-        # For now, we'll need the frontend to pass the original table_id
-        # But we can infer it by adding .px extension
-        potential_table_ids = [
-            config_data.dataset_id + ".px",
-            config_data.dataset_id,
-        ]
+        # Use the explicit statfin_table_id if provided by the frontend,
+        # otherwise fall back to guessing from dataset_id
+        if config_data.statfin_table_id:
+            potential_table_ids = [config_data.statfin_table_id]
+        else:
+            potential_table_ids = [
+                config_data.dataset_id + ".px",
+                config_data.dataset_id,
+            ]
 
         client = StatFinClient()
         metadata = None
@@ -254,7 +254,7 @@ async def create_fetch_config(
         )
 
     # Create new fetch configuration
-    config = FetchConfig(**config_data.model_dump())
+    config = FetchConfig(**config_data.model_dump(exclude={"statfin_table_id"}))
     db.add(config)
     await db.flush()
     await db.refresh(config)

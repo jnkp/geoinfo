@@ -361,6 +361,12 @@ class FetchConfigCreate(FetchConfigBase):
     """Schema for creating a new fetch configuration."""
 
     dataset_id: str = Field(..., description="Target dataset identifier for fetching")
+    statfin_table_id: Optional[str] = Field(
+        None,
+        description="Original StatFin table identifier with category prefix "
+        "(e.g., 'ashi/statfin_ashi_pxt_13mx.px'). Used for API lookups "
+        "when auto-creating datasets.",
+    )
 
 
 class FetchConfigUpdate(BaseModel):
