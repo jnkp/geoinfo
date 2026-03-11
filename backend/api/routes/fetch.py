@@ -409,7 +409,7 @@ async def list_statfin_tables(
 
 
 @statfin_router.get(
-    "/tables/{table_id:path}/metadata",
+    "/tables/metadata",
     response_model=StatFinTableMetadata,
     summary="Get StatFin table metadata",
     description="Fetch metadata for a specific StatFin table including dimensions and values.",
@@ -419,7 +419,7 @@ async def list_statfin_tables(
     },
 )
 async def get_statfin_table_metadata(
-    table_id: str,
+    table_id: str = Query(..., description="StatFin table identifier (e.g., 'statfin_ashi_pxt_13mx.px')"),
 ) -> StatFinTableMetadata:
     """Get metadata for a specific StatFin table.
 
