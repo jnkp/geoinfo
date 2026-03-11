@@ -442,6 +442,7 @@ export function FetchConfigForm({
 
       createConfig({
         dataset_id: datasetId,
+        statfin_table_id: selectedTable.table_id,
         name: formData.name.trim(),
         description: formData.description.trim() || null,
         is_active: formData.isActive,
