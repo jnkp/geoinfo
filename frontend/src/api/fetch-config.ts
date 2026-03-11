@@ -159,7 +159,7 @@ export function useStatFinTableMetadata(
 ) {
   return useQuery({
     queryKey: statfinKeys.tableMetadata(tableId),
-    queryFn: () => apiClient.get<StatFinTableMetadata>(`/statfin/tables/${encodeURIComponent(tableId)}/metadata`),
+    queryFn: () => apiClient.get<StatFinTableMetadata>(`/statfin/tables/metadata?table_id=${encodeURIComponent(tableId)}`),
     enabled: Boolean(tableId),
     staleTime: 10 * 60 * 1000, // Table metadata rarely changes
     ...options,
