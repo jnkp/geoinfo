@@ -389,7 +389,7 @@ async def list_statfin_tables(
 
             tables = [
                 StatFinTableInfo(
-                    table_id=item.id,
+                    table_id="/".join(item.path),
                     text=item.text,
                     type="table" if item.is_table else "folder",
                     path=item.path,
