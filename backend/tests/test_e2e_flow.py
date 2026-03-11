@@ -200,7 +200,7 @@ class TestStatFinToDatabaseFlow:
             # Create mock dataset
             dataset = Dataset(
                 id="test-dataset",
-                name="Test Dataset",
+                name_fi="Test Dataset",
                 statfin_table_id="test/table.px",
                 time_resolution="year"
             )

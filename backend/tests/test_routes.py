@@ -213,30 +213,26 @@ class TestDatasetRoutes:
         mock_db.execute.return_value = mock_result
 
         with patch("config.get_settings", return_value=mock_settings):
-            with patch("models.get_db") as mock_get_db:
-                mock_get_db.return_value = mock_db
-                app = create_test_app()
-                app.dependency_overrides[mock_get_db] = lambda: mock_db
+            from models import get_db
 
-                # Use async override
-                async def override_get_db():
-                    yield mock_db
+            app = create_test_app()
 
-                from models import get_db
+            async def override_get_db():
+                yield mock_db
 
-                app.dependency_overrides[get_db] = override_get_db
+            app.dependency_overrides[get_db] = override_get_db
 
-                async with AsyncClient(
-                    transport=ASGITransport(app=app), base_url="http://test"
-                ) as client:
-                    response = await client.get("/api/datasets")
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                response = await client.get("/api/datasets")
 
-                assert response.status_code == 200
-                data = response.json()
-                assert "items" in data
-                assert "total" in data
-                assert "page" in data
-                assert "page_size" in data
+            assert response.status_code == 200
+            data = response.json()
+            assert "items" in data
+            assert "total" in data
+            assert "page" in data
+            assert "page_size" in data
 
     @pytest.mark.asyncio
     async def test_list_datasets_with_results(self, mock_db):
