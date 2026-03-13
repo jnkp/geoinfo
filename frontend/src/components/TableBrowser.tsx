@@ -423,9 +423,16 @@ export function TableBrowser({
       const pathParts = currentPath.split('/').filter(Boolean);
       const parentPath = pathParts.slice(0, -1).join('/');
 
-      // TODO: Add setTimeout with cleanup (subsequent subtask)
-      // TODO: Handle edge cases like root level (subsequent subtask)
-      // TODO: Navigate to parentPath
+      // Wait 1 second before auto-navigating to parent
+      const timeoutId = setTimeout(() => {
+        // TODO: Handle edge cases like root level (subsequent subtask)
+        if (!disabled && currentPath) {
+          setCurrentPath(parentPath);
+        }
+      }, 1000);
+
+      // Cleanup: clear timeout if component unmounts or dependencies change
+      return () => clearTimeout(timeoutId);
     }
   }, [isError, error, currentPath, disabled]);
 
