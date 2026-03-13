@@ -419,19 +419,24 @@ export function TableBrowser({
   useEffect(() => {
     // Check if we have a 400 error (Bad Request - inaccessible/deprecated folder)
     if (isError && error instanceof ApiError && error.status === 400) {
+      // Don't navigate if we're at the root level (no parent to navigate to)
+      if (!currentPath) {
+        return;
+      }
+
       // Calculate parent path by removing last segment
       const pathParts = currentPath.split('/').filter(Boolean);
       const parentPath = pathParts.slice(0, -1).join('/');
 
       // Wait 1 second before auto-navigating to parent
       const timeoutId = setTimeout(() => {
-        // TODO: Handle edge cases like root level (subsequent subtask)
-        if (!disabled && currentPath) {
+        if (!disabled) {
           setCurrentPath(parentPath);
         }
       }, 1000);
 
       // Cleanup: clear timeout if component unmounts or dependencies change
+      // (e.g., user manually navigates during the timeout period)
       return () => clearTimeout(timeoutId);
     }
   }, [isError, error, currentPath, disabled]);
