@@ -682,4 +682,455 @@ describe('TableBrowser - Auto-Navigation Timing', () => {
     // Navigation should not have occurred
     expect(mockNavigate).not.toHaveBeenCalled();
   });
+
+  it('should handle multiple consecutive timeouts with different paths', () => {
+    const mockNavigate = vi.fn();
+    const paths = ['vaerak', 'tilastokeskus', 'population'];
+
+    // Set multiple timeouts
+    paths.forEach((path, index) => {
+      setTimeout(() => {
+        mockNavigate(path);
+      }, (index + 1) * 1000);
+    });
+
+    // After 1 second - first timeout fires
+    vi.advanceTimersByTime(1000);
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith('vaerak');
+
+    // After 2 seconds total - second timeout fires
+    vi.advanceTimersByTime(1000);
+    expect(mockNavigate).toHaveBeenCalledTimes(2);
+    expect(mockNavigate).toHaveBeenCalledWith('tilastokeskus');
+
+    // After 3 seconds total - third timeout fires
+    vi.advanceTimersByTime(1000);
+    expect(mockNavigate).toHaveBeenCalledTimes(3);
+    expect(mockNavigate).toHaveBeenCalledWith('population');
+  });
+});
+
+// =============================================================================
+// Advanced Edge Cases - Data Robustness
+// =============================================================================
+
+describe('TableBrowser - Data Robustness Edge Cases', () => {
+  describe('Unicode and special characters', () => {
+    it('should handle table IDs with Unicode characters', () => {
+      const unicodeTables: StatFinTableInfo[] = [
+        {
+          table_id: 'väestö_2023',
+          text: 'Population 2023 with ä',
+          type: 'folder',
+          path: ['väestö_2023'],
+        },
+        {
+          table_id: '人口統計',
+          text: 'Japanese characters',
+          type: 'folder',
+          path: ['人口統計'],
+        },
+        {
+          table_id: 'données_économiques',
+          text: 'French characters',
+          type: 'folder',
+          path: ['données_économiques'],
+        },
+      ];
+
+      const filtered = filterBlocklistedFolders(unicodeTables);
+      // None are in blocklist, all should pass through
+      expect(filtered.length).toBe(3);
+    });
+
+    it('should handle paths with Unicode characters', () => {
+      const unicodePath = 'väestö/työllisyys/data';
+      const parentPath = calculateParentPath(unicodePath);
+      expect(parentPath).toBe('väestö/työllisyys');
+    });
+
+    it('should handle paths with emoji characters', () => {
+      const emojiPath = 'folder📊/data📈/2023';
+      const parentPath = calculateParentPath(emojiPath);
+      expect(parentPath).toBe('folder📊/data📈');
+    });
+
+    it('should handle table IDs with special URL characters', () => {
+      const specialCharTables: StatFinTableInfo[] = [
+        {
+          table_id: 'table%20with%20spaces',
+          text: 'URL encoded spaces',
+          type: 'folder',
+          path: ['table%20with%20spaces'],
+        },
+        {
+          table_id: 'data&analytics',
+          text: 'Ampersand',
+          type: 'folder',
+          path: ['data&analytics'],
+        },
+        {
+          table_id: 'test?query=true',
+          text: 'Question mark',
+          type: 'folder',
+          path: ['test?query=true'],
+        },
+      ];
+
+      const filtered = filterBlocklistedFolders(specialCharTables);
+      expect(filtered.length).toBe(3);
+    });
+  });
+
+  describe('Extreme length values', () => {
+    it('should handle very long table IDs', () => {
+      const longId = 'a'.repeat(1000);
+      const longTable: StatFinTableInfo[] = [
+        {
+          table_id: longId,
+          text: 'Very long ID',
+          type: 'folder',
+          path: [longId],
+        },
+      ];
+
+      const filtered = filterBlocklistedFolders(longTable);
+      expect(filtered.length).toBe(1);
+      expect(filtered[0].table_id).toBe(longId);
+    });
+
+    it('should handle very long paths', () => {
+      const segments = Array(100).fill('folder').join('/');
+      const parentPath = calculateParentPath(segments);
+
+      const expectedSegments = Array(99).fill('folder').join('/');
+      expect(parentPath).toBe(expectedSegments);
+    });
+
+    it('should handle very long text descriptions', () => {
+      const longText = 'Description '.repeat(1000);
+      const table: StatFinTableInfo[] = [
+        {
+          table_id: 'test',
+          text: longText,
+          type: 'folder',
+          path: ['test'],
+        },
+      ];
+
+      const filtered = filterBlocklistedFolders(table);
+      expect(filtered[0].text).toBe(longText);
+    });
+
+    it('should handle path with maximum reasonable depth', () => {
+      const deepPath = Array(50).fill('level').join('/');
+      const parentPath = calculateParentPath(deepPath);
+
+      const expected = Array(49).fill('level').join('/');
+      expect(parentPath).toBe(expected);
+    });
+  });
+
+  describe('Whitespace handling', () => {
+    it('should handle table IDs with leading/trailing whitespace', () => {
+      const whitespaceTable: StatFinTableInfo[] = [
+        {
+          table_id: '  vaerak  ',
+          text: 'Whitespace around ID',
+          type: 'folder',
+          path: ['  vaerak  '],
+        },
+      ];
+
+      const filtered = filterBlocklistedFolders(whitespaceTable);
+      // Not filtered (ID with spaces != 'aly')
+      expect(filtered.length).toBe(1);
+    });
+
+    it('should handle paths with whitespace in segments', () => {
+      const pathWithSpaces = 'folder name/sub folder/data table';
+      const parentPath = calculateParentPath(pathWithSpaces);
+      expect(parentPath).toBe('folder name/sub folder');
+    });
+
+    it('should handle paths with multiple consecutive slashes', () => {
+      const multiSlashPath = 'folder//subfolder///data';
+      const parentPath = calculateParentPath(multiSlashPath);
+      // .filter(Boolean) removes empty strings from split
+      expect(parentPath).toBe('folder/subfolder');
+    });
+
+    it('should handle paths with only slashes', () => {
+      expect(calculateParentPath('/')).toBe('');
+      expect(calculateParentPath('//')).toBe('');
+      expect(calculateParentPath('///')).toBe('');
+    });
+  });
+
+  describe('Malformed data structures', () => {
+    it('should handle tables with extra properties', () => {
+      const extraPropsTable = {
+        table_id: 'test',
+        text: 'Test Table',
+        type: 'folder',
+        path: ['test'],
+        extraProp1: 'value1',
+        extraProp2: 123,
+        nestedObj: { foo: 'bar' },
+      } as unknown as StatFinTableInfo;
+
+      const filtered = filterBlocklistedFolders([extraPropsTable]);
+      expect(filtered.length).toBe(1);
+    });
+
+    it('should handle tables with null text field', () => {
+      const nullTextTable = {
+        table_id: 'test',
+        text: null as unknown as string,
+        type: 'folder',
+        path: ['test'],
+      };
+
+      const filtered = filterBlocklistedFolders([nullTextTable]);
+      expect(filtered.length).toBe(1);
+    });
+
+    it('should handle tables with array path containing non-strings', () => {
+      const mixedPathTable = {
+        table_id: 'test',
+        text: 'Test',
+        type: 'folder',
+        path: ['valid', 123, null, 'string'] as unknown as string[],
+      };
+
+      const filtered = filterBlocklistedFolders([mixedPathTable]);
+      expect(filtered.length).toBe(1);
+    });
+
+    it('should handle empty path array', () => {
+      const emptyPathTable: StatFinTableInfo = {
+        table_id: 'test',
+        text: 'Empty Path',
+        type: 'folder',
+        path: [],
+      };
+
+      const filtered = filterBlocklistedFolders([emptyPathTable]);
+      expect(filtered.length).toBe(1);
+    });
+  });
+});
+
+// =============================================================================
+// Combined Edge Case Scenarios
+// =============================================================================
+
+describe('TableBrowser - Combined Edge Case Scenarios', () => {
+  it('should handle blocklist filtering with mixed valid and invalid data', () => {
+    const mixedData: StatFinTableInfo[] = [
+      { table_id: 'valid1', text: 'Valid', type: 'folder', path: ['valid1'] },
+      { table_id: 'aly', text: 'Blocklisted', type: 'folder', path: ['aly'] },
+      { table_id: '', text: 'Empty ID', type: 'folder', path: [''] },
+      { table_id: 'valid2', text: 'Valid Table', type: 'table', path: ['valid2'] },
+      { table_id: 'ALY', text: 'Uppercase blocklisted', type: 'folder', path: ['ALY'] },
+    ];
+
+    const filtered = filterBlocklistedFolders(mixedData);
+
+    // Should have 3 items: valid1, empty ID, valid2 (aly and ALY filtered)
+    expect(filtered.length).toBe(3);
+    expect(filtered.find(t => t.table_id === 'aly')).toBeUndefined();
+    expect(filtered.find(t => t.table_id === 'ALY')).toBeUndefined();
+    expect(filtered.find(t => t.table_id === 'valid1')).toBeDefined();
+    expect(filtered.find(t => t.table_id === 'valid2')).toBeDefined();
+  });
+
+  it('should handle 400 error with Unicode path requiring navigation', () => {
+    const error = new ApiError('Bad Request', 400);
+    const unicodePath = 'väestö/データ/deprecated';
+
+    const errorMessage = getErrorMessage(error.status, error.message);
+    expect(errorMessage).toBe('This folder is currently inaccessible or has been deprecated');
+
+    const parentPath = calculateParentPath(unicodePath);
+    expect(parentPath).toBe('väestö/データ');
+  });
+
+  it('should handle auto-navigation decision with edge case paths', () => {
+    const error = new ApiError('Bad Request', 400);
+
+    // Test various edge case paths
+    const testCases = [
+      { path: '', shouldNavigate: false, parent: '' },
+      { path: '/', shouldNavigate: false, parent: '' },
+      { path: 'a', shouldNavigate: false, parent: '' },
+      { path: 'a/', shouldNavigate: false, parent: '' },
+      { path: '/a', shouldNavigate: false, parent: '' },
+      { path: 'a/b', shouldNavigate: true, parent: 'a' },
+      { path: '/a/b', shouldNavigate: true, parent: 'a' },
+      { path: 'a/b/', shouldNavigate: true, parent: 'a' },
+      { path: '//a//b//', shouldNavigate: true, parent: 'a' },
+    ];
+
+    testCases.forEach(({ path, shouldNavigate, parent }) => {
+      const parentPath = calculateParentPath(path);
+      expect(parentPath).toBe(parent);
+      expect(parentPath !== '').toBe(shouldNavigate);
+    });
+  });
+
+  it('should handle multiple error types in sequence', () => {
+    const errors = [
+      new ApiError('Bad Request', 400),
+      new ApiError('Not Found', 404),
+      new ApiError('Server Error', 500),
+      new Error('Generic Error'),
+    ];
+
+    const expectedMessages = [
+      'This folder is currently inaccessible or has been deprecated',
+      'Not Found',
+      'Server Error',
+      'Generic Error',
+    ];
+
+    errors.forEach((error, index) => {
+      const statusCode = error instanceof ApiError ? error.status : undefined;
+      const message = getErrorMessage(statusCode, error.message);
+      expect(message).toBe(expectedMessages[index]);
+    });
+  });
+
+  it('should handle filtering with all edge case table types', () => {
+    const edgeCaseTables: StatFinTableInfo[] = [
+      // Normal cases
+      { table_id: 'normal', text: 'Normal', type: 'folder', path: ['normal'] },
+      { table_id: 'table.px', text: 'Normal Table', type: 'table', path: ['table.px'] },
+
+      // Blocklisted
+      { table_id: 'aly', text: 'Blocklisted', type: 'folder', path: ['aly'] },
+
+      // Edge cases
+      { table_id: '', text: 'Empty', type: 'folder', path: [''] },
+      { table_id: 'ü', text: 'Single Unicode', type: 'folder', path: ['ü'] },
+      { table_id: 'very-long-' + 'x'.repeat(500), text: 'Long ID', type: 'folder', path: ['long'] },
+
+      // Type variations
+      { table_id: 'unknown', text: 'Unknown Type', type: 'unknown' as any, path: ['unknown'] },
+    ];
+
+    const filtered = filterBlocklistedFolders(edgeCaseTables);
+
+    // Should filter out only 'aly' folder (case-insensitive match)
+    expect(filtered.find(t => t.table_id === 'aly')).toBeUndefined();
+
+    // All others should pass through
+    expect(filtered.length).toBe(edgeCaseTables.length - 1);
+  });
+});
+
+// =============================================================================
+// Stress Test Edge Cases
+// =============================================================================
+
+describe('TableBrowser - Stress Test Edge Cases', () => {
+  it('should handle filtering large number of tables efficiently', () => {
+    const largeTables: StatFinTableInfo[] = Array.from({ length: 10000 }, (_, i) => ({
+      table_id: `table_${i}`,
+      text: `Table ${i}`,
+      type: i % 2 === 0 ? 'folder' : 'table',
+      path: [`table_${i}`],
+    }));
+
+    // Add some blocklisted items
+    largeTables.push({
+      table_id: 'aly',
+      text: 'Blocklisted',
+      type: 'folder',
+      path: ['aly'],
+    });
+
+    const startTime = performance.now();
+    const filtered = filterBlocklistedFolders(largeTables);
+    const endTime = performance.now();
+
+    // Should filter out aly
+    expect(filtered.find(t => t.table_id === 'aly')).toBeUndefined();
+    expect(filtered.length).toBe(10000);
+
+    // Should complete in reasonable time (< 100ms for 10k items)
+    expect(endTime - startTime).toBeLessThan(100);
+  });
+
+  it('should handle deeply nested path calculations efficiently', () => {
+    const depth = 1000;
+    const deepPath = Array(depth).fill('level').join('/');
+
+    const startTime = performance.now();
+    const parentPath = calculateParentPath(deepPath);
+    const endTime = performance.now();
+
+    const expected = Array(depth - 1).fill('level').join('/');
+    expect(parentPath).toBe(expected);
+
+    // Should complete in reasonable time (< 10ms even for 1000 levels)
+    expect(endTime - startTime).toBeLessThan(10);
+  });
+
+  it('should handle rapid sequential error message generation', () => {
+    const iterations = 1000;
+    const error = new ApiError('Bad Request', 400);
+
+    const startTime = performance.now();
+    for (let i = 0; i < iterations; i++) {
+      getErrorMessage(error.status, error.message);
+    }
+    const endTime = performance.now();
+
+    // Should handle many iterations quickly
+    expect(endTime - startTime).toBeLessThan(50);
+  });
+});
+
+// =============================================================================
+// Null Safety and Type Edge Cases
+// =============================================================================
+
+describe('TableBrowser - Null Safety Edge Cases', () => {
+  it('should handle ApiError with undefined status gracefully', () => {
+    const error = new ApiError('Error without status', undefined as any);
+
+    expect(shouldShow400Message(error.status)).toBe(false);
+    expect(getErrorMessage(error.status, error.message)).toBe('Error without status');
+  });
+
+  it('should handle null and undefined in path calculations', () => {
+    expect(calculateParentPath(null as any)).toBe('');
+    expect(calculateParentPath(undefined as any)).toBe('');
+  });
+
+  it('should handle tables array with null/undefined elements', () => {
+    const tablesWithNulls = [
+      { table_id: 'valid', text: 'Valid', type: 'folder', path: ['valid'] },
+      null,
+      undefined,
+      { table_id: 'aly', text: 'Blocklisted', type: 'folder', path: ['aly'] },
+    ].filter(Boolean) as StatFinTableInfo[];
+
+    // After filtering out null/undefined
+    const filtered = filterBlocklistedFolders(tablesWithNulls);
+    expect(filtered.length).toBe(1);
+    expect(filtered[0].table_id).toBe('valid');
+  });
+
+  it('should handle error message with null default message', () => {
+    const message = getErrorMessage(500, null as any);
+    expect(message).toBe(null);
+  });
+
+  it('should handle error message with undefined default message', () => {
+    const message = getErrorMessage(500, undefined as any);
+    expect(message).toBe(undefined);
+  });
 });
