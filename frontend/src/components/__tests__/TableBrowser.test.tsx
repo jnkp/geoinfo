@@ -53,14 +53,6 @@ const mockTables: StatFinTableInfo[] = [
   },
 ];
 
-/**
- * Mock API response for StatFin tables
- */
-const mockTableListResponse = {
-  tables: mockTables,
-  total: mockTables.length,
-};
-
 // =============================================================================
 // Helper Functions to Test
 // =============================================================================
@@ -958,8 +950,6 @@ describe('TableBrowser - Combined Edge Case Scenarios', () => {
   });
 
   it('should handle auto-navigation decision with edge case paths', () => {
-    const error = new ApiError('Bad Request', 400);
-
     // Test various edge case paths
     const testCases = [
       { path: '', shouldNavigate: false, parent: '' },
