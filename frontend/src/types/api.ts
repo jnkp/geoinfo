@@ -296,6 +296,8 @@ export interface FetchConfigBase {
 export interface FetchConfigCreate extends FetchConfigBase {
   /** Target dataset identifier for fetching */
   dataset_id: string;
+  /** Original StatFin table identifier */
+  statfin_table_id: string;
 }
 
 /** Interface for updating fetch configuration (all fields optional) */

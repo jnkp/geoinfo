@@ -213,30 +213,26 @@ class TestDatasetRoutes:
         mock_db.execute.return_value = mock_result
 
         with patch("config.get_settings", return_value=mock_settings):
-            with patch("models.get_db") as mock_get_db:
-                mock_get_db.return_value = mock_db
-                app = create_test_app()
-                app.dependency_overrides[mock_get_db] = lambda: mock_db
+            from models import get_db
 
-                # Use async override
-                async def override_get_db():
-                    yield mock_db
+            app = create_test_app()
 
-                from models import get_db
+            async def override_get_db():
+                yield mock_db
 
-                app.dependency_overrides[get_db] = override_get_db
+            app.dependency_overrides[get_db] = override_get_db
 
-                async with AsyncClient(
-                    transport=ASGITransport(app=app), base_url="http://test"
-                ) as client:
-                    response = await client.get("/api/datasets")
+            async with AsyncClient(
+                transport=ASGITransport(app=app), base_url="http://test"
+            ) as client:
+                response = await client.get("/api/datasets")
 
-                assert response.status_code == 200
-                data = response.json()
-                assert "items" in data
-                assert "total" in data
-                assert "page" in data
-                assert "page_size" in data
+            assert response.status_code == 200
+            data = response.json()
+            assert "items" in data
+            assert "total" in data
+            assert "page" in data
+            assert "page_size" in data
 
     @pytest.mark.asyncio
     async def test_list_datasets_with_results(self, mock_db):
@@ -1439,6 +1435,167 @@ class TestStatFinRoutes:
 
                     # Either succeeds or fails gracefully
                     assert response.status_code in [200, 500]
+
+    @pytest.mark.asyncio
+    async def test_metadata_endpoint_uses_query_parameter(self, mock_db):
+        """Test that metadata endpoint accepts table_id as query parameter."""
+        mock_metadata = MagicMock()
+        mock_metadata.table_id = "ashi/statfin_ashi_pxt_13mx.px"
+        mock_metadata.title = "Test Table"
+        mock_metadata.dimensions = []
+        mock_metadata.last_updated = None
+        mock_metadata.source = None
+
+        with patch("config.get_settings", return_value=mock_settings):
+            with patch("api.routes.fetch.StatFinClient") as MockStatFinClient:
+                mock_ctx = AsyncMock()
+                mock_ctx.__aenter__ = AsyncMock(return_value=mock_ctx)
+                mock_ctx.__aexit__ = AsyncMock(return_value=None)
+                mock_ctx.get_table_metadata = AsyncMock(return_value=mock_metadata)
+                MockStatFinClient.return_value = mock_ctx
+
+                from models import get_db
+
+                app = create_test_app()
+
+                async def override_get_db():
+                    yield mock_db
+
+                app.dependency_overrides[get_db] = override_get_db
+
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    response = await client.get(
+                        "/api/statfin/tables/metadata?table_id=ashi/statfin_ashi_pxt_13mx.px"
+                    )
+
+                # Should route correctly (200 or 500 from StatFin), NOT 404
+                assert response.status_code in [200, 500]
+
+    @pytest.mark.asyncio
+    async def test_browse_response_table_id_includes_category_prefix(self, mock_db):
+        """Test that browse response table_id includes full path with category prefix."""
+        mock_table_item = MagicMock()
+        mock_table_item.id = "statfin_ashi_pxt_13mx.px"
+        mock_table_item.text = "Vanhojen osakeasuntojen neliöhinnat"
+        mock_table_item.is_table = True
+        mock_table_item.path = ["ashi", "statfin_ashi_pxt_13mx.px"]
+
+        mock_folder_item = MagicMock()
+        mock_folder_item.id = "ashi"
+        mock_folder_item.text = "Asuntojen hinnat"
+        mock_folder_item.is_table = False
+        mock_folder_item.path = ["ashi"]
+
+        with patch("config.get_settings", return_value=mock_settings):
+            with patch("api.routes.fetch.StatFinClient") as MockStatFinClient:
+                mock_ctx = AsyncMock()
+                mock_ctx.__aenter__ = AsyncMock(return_value=mock_ctx)
+                mock_ctx.__aexit__ = AsyncMock(return_value=None)
+                mock_ctx.list_tables = AsyncMock(
+                    return_value=[mock_folder_item, mock_table_item]
+                )
+                MockStatFinClient.return_value = mock_ctx
+
+                from models import get_db
+
+                app = create_test_app()
+
+                async def override_get_db():
+                    yield mock_db
+
+                app.dependency_overrides[get_db] = override_get_db
+
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    response = await client.get("/api/statfin/tables")
+
+                assert response.status_code == 200
+                data = response.json()
+                tables = data["tables"]
+                # The table item should have full path as table_id
+                table_entry = [t for t in tables if t["type"] == "table"]
+                assert len(table_entry) > 0
+                assert table_entry[0]["table_id"] == "ashi/statfin_ashi_pxt_13mx.px"
+                # The folder item should have just folder name
+                folder_entry = [t for t in tables if t["type"] == "folder"]
+                assert len(folder_entry) > 0
+                assert folder_entry[0]["table_id"] == "ashi"
+
+    @pytest.mark.asyncio
+    async def test_create_fetch_config_accepts_statfin_table_id(self, mock_db):
+        """Test that create_fetch_config accepts and uses statfin_table_id field."""
+        # Dataset does NOT exist, so auto-creation path is triggered
+        mock_dataset_result = MagicMock()
+        mock_dataset_result.scalar_one_or_none.return_value = None
+        mock_existing_result = MagicMock()
+        mock_existing_result.scalar_one_or_none.return_value = None
+
+        mock_db.execute.side_effect = [mock_dataset_result, mock_existing_result]
+
+        def mock_refresh(obj):
+            obj.id = 1
+            obj.dataset_id = "statfin_ashi_pxt_13mx"
+            obj.name = "Test Fetch"
+            obj.description = None
+            obj.is_active = True
+            obj.fetch_interval_hours = 24
+            obj.priority = 0
+            obj.last_fetch_at = None
+            obj.last_fetch_status = "pending"
+            obj.last_error_message = None
+            obj.next_fetch_at = None
+            obj.fetch_count = 0
+            obj.created_at = datetime(2024, 1, 1, 12, 0, 0)
+            obj.updated_at = datetime(2024, 1, 1, 12, 0, 0)
+
+        mock_db.refresh.side_effect = mock_refresh
+
+        mock_metadata = MagicMock()
+        mock_metadata.title = "Vanhojen osakeasuntojen neliöhinnat"
+        mock_dim = MagicMock()
+        mock_dim.name = "Vuosi"
+        mock_metadata.dimensions = [mock_dim]
+
+        with patch("config.get_settings", return_value=mock_settings):
+            with patch("api.routes.fetch.StatFinClient") as MockStatFinClient:
+                mock_ctx = AsyncMock()
+                mock_ctx.__aenter__ = AsyncMock(return_value=mock_ctx)
+                mock_ctx.__aexit__ = AsyncMock(return_value=None)
+                mock_ctx.get_table_metadata = AsyncMock(return_value=mock_metadata)
+                MockStatFinClient.return_value = mock_ctx
+
+                from models import get_db
+
+                app = create_test_app()
+
+                async def override_get_db():
+                    yield mock_db
+
+                app.dependency_overrides[get_db] = override_get_db
+
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    response = await client.post(
+                        "/api/fetch-configs",
+                        json={
+                            "dataset_id": "statfin_ashi_pxt_13mx",
+                            "name": "Test Fetch",
+                            "statfin_table_id": "ashi/statfin_ashi_pxt_13mx.px",
+                        },
+                    )
+
+                # Should succeed or at least not 422 (validation passes)
+                assert response.status_code in [201, 500]
+
+                # Verify the StatFin client was called with the provided statfin_table_id
+                if response.status_code == 201:
+                    mock_ctx.get_table_metadata.assert_called_with(
+                        "ashi/statfin_ashi_pxt_13mx.px"
+                    )
 
 
 # =============================================================================

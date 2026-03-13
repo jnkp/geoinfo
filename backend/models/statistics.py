@@ -136,6 +136,22 @@ class Dataset(Base):
         {"comment": "StatFin dataset metadata for configured data fetching"},
     )
 
+    def __init__(self, **kwargs):
+        """Initialize Dataset with Python-level defaults.
+
+        SQLAlchemy column defaults are only applied at flush time, so we
+        apply defaults here for consistent behavior in unit tests and
+        application code.
+        """
+        defaults = {
+            "time_resolution": "year",
+            "has_region_dimension": False,
+            "has_industry_dimension": False,
+        }
+        for key, value in defaults.items():
+            kwargs.setdefault(key, value)
+        super().__init__(**kwargs)
+
     def __repr__(self) -> str:
         """Return string representation of Dataset."""
         return f"<Dataset(id={self.id!r}, name_fi={self.name_fi!r}, statfin_table_id={self.statfin_table_id!r})>"

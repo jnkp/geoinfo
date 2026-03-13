@@ -167,6 +167,24 @@ class FetchConfig(Base):
         {"comment": "Fetch configurations for scheduled StatFin data retrieval"},
     )
 
+    def __init__(self, **kwargs):
+        """Initialize FetchConfig with Python-level defaults.
+
+        SQLAlchemy column defaults are only applied at flush time, so we
+        apply defaults here for consistent behavior in unit tests and
+        application code.
+        """
+        defaults = {
+            "is_active": True,
+            "fetch_interval_hours": 24,
+            "priority": 0,
+            "last_fetch_status": "pending",
+            "fetch_count": 0,
+        }
+        for key, value in defaults.items():
+            kwargs.setdefault(key, value)
+        super().__init__(**kwargs)
+
     def __repr__(self) -> str:
         """Return string representation of FetchConfig."""
         return (
