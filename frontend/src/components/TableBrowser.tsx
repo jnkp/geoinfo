@@ -463,6 +463,19 @@ export function TableBrowser({
     ...(compact ? styles.compact.content : {}),
   }), [compact]);
 
+  // Filter out blocklisted folders
+  const filteredTables = useMemo(() => {
+    if (!tablesData?.tables) return [];
+
+    return tablesData.tables.filter(table => {
+      // Only filter folders, not tables
+      if (table.type !== 'folder') return true;
+
+      // Exclude folders whose table_id (lowercased) is in blocklist
+      return !FOLDER_BLOCKLIST.includes(table.table_id.toLowerCase());
+    });
+  }, [tablesData]);
+
   return (
     <div style={containerStyle}>
       {/* Header with breadcrumbs */}
@@ -481,11 +494,11 @@ export function TableBrowser({
           <LoadingState />
         ) : isError ? (
           <ErrorState message={error?.message || 'Unknown error'} />
-        ) : !tablesData?.tables.length ? (
+        ) : !filteredTables.length ? (
           <EmptyState />
         ) : (
           <ul style={styles.list} role="list" aria-label="StatFin tables">
-            {tablesData.tables.map((table) => (
+            {filteredTables.map((table) => (
               <TableItem
                 key={table.table_id}
                 table={table}
