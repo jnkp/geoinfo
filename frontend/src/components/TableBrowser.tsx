@@ -20,6 +20,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useStatFinTables } from '../api/fetch-config';
+import { ApiError } from '../api/client';
 import type { StatFinTableInfo } from '../types/api';
 
 // =============================================================================
@@ -500,7 +501,7 @@ export function TableBrowser({
         ) : isError ? (
           <ErrorState
             message={error?.message || 'Unknown error'}
-            statusCode={error?.status}
+            statusCode={error instanceof ApiError ? error.status : undefined}
           />
         ) : !filteredTables.length ? (
           <EmptyState />
