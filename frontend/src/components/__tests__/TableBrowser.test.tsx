@@ -468,6 +468,166 @@ describe('TableBrowser - Edge Cases', () => {
 });
 
 // =============================================================================
+// Auto-Navigation Logic Tests
+// =============================================================================
+
+describe('TableBrowser - Auto-Navigation Logic', () => {
+  /**
+   * Determine if auto-navigation should be triggered.
+   * This mirrors the decision logic in TableBrowser's useEffect.
+   *
+   * @param error - The error that occurred
+   * @param currentPath - Current navigation path
+   * @returns True if auto-navigation should occur
+   */
+  function shouldAutoNavigate(error: ApiError | Error | null, currentPath: string): boolean {
+    // Only auto-navigate on 400 errors
+    if (!(error instanceof ApiError) || error.status !== 400) {
+      return false;
+    }
+
+    // Only auto-navigate if not at root level
+    const parentPath = calculateParentPath(currentPath);
+    return parentPath !== '';
+  }
+
+  describe('shouldAutoNavigate', () => {
+    it('should return true for 400 error with non-root path', () => {
+      const error = new ApiError('Bad Request', 400);
+      const currentPath = 'vaerak/aly';
+
+      expect(shouldAutoNavigate(error, currentPath)).toBe(true);
+    });
+
+    it('should return false for 400 error at root level', () => {
+      const error = new ApiError('Bad Request', 400);
+      const currentPath = 'aly';
+
+      expect(shouldAutoNavigate(error, currentPath)).toBe(false);
+    });
+
+    it('should return false for non-400 errors', () => {
+      const error404 = new ApiError('Not Found', 404);
+      const error500 = new ApiError('Server Error', 500);
+
+      expect(shouldAutoNavigate(error404, 'vaerak/aly')).toBe(false);
+      expect(shouldAutoNavigate(error500, 'vaerak/aly')).toBe(false);
+    });
+
+    it('should return false for generic Error (not ApiError)', () => {
+      const genericError = new Error('Something went wrong');
+      const currentPath = 'vaerak/aly';
+
+      expect(shouldAutoNavigate(genericError, currentPath)).toBe(false);
+    });
+
+    it('should return false when error is null', () => {
+      expect(shouldAutoNavigate(null, 'vaerak/aly')).toBe(false);
+    });
+
+    it('should handle deeply nested paths correctly', () => {
+      const error = new ApiError('Bad Request', 400);
+      const deepPath = 'a/b/c/d/e';
+
+      expect(shouldAutoNavigate(error, deepPath)).toBe(true);
+    });
+
+    it('should handle empty path correctly', () => {
+      const error = new ApiError('Bad Request', 400);
+
+      expect(shouldAutoNavigate(error, '')).toBe(false);
+    });
+  });
+
+  describe('Auto-navigation workflow', () => {
+    it('should calculate correct parent path for auto-navigation', () => {
+      const error = new ApiError('Bad Request', 400);
+      const currentPath = 'vaerak/population/2023';
+
+      if (shouldAutoNavigate(error, currentPath)) {
+        const parentPath = calculateParentPath(currentPath);
+        expect(parentPath).toBe('vaerak/population');
+      }
+    });
+
+    it('should not navigate when at root but should show error message', () => {
+      const error = new ApiError('Bad Request', 400);
+      const currentPath = 'aly';
+
+      // Auto-navigation should not occur
+      expect(shouldAutoNavigate(error, currentPath)).toBe(false);
+
+      // But error message should still be shown
+      const errorMessage = getErrorMessage(error.status, error.message);
+      expect(errorMessage).toBe('This folder is currently inaccessible or has been deprecated');
+    });
+
+    it('should handle complete workflow: 400 error → show message → navigate to parent', () => {
+      const error = new ApiError('Bad Request', 400);
+      const currentPath = 'vaerak/aly/subfolder';
+
+      // Step 1: Check if error warrants special message
+      const shouldShow400 = shouldShow400Message(error.status);
+      expect(shouldShow400).toBe(true);
+
+      // Step 2: Get error message
+      const errorMessage = getErrorMessage(error.status, error.message);
+      expect(errorMessage).toBe('This folder is currently inaccessible or has been deprecated');
+
+      // Step 3: Check if auto-navigation should occur
+      const shouldNavigate = shouldAutoNavigate(error, currentPath);
+      expect(shouldNavigate).toBe(true);
+
+      // Step 4: Calculate parent path for navigation
+      const parentPath = calculateParentPath(currentPath);
+      expect(parentPath).toBe('vaerak/aly');
+    });
+  });
+
+  describe('Edge cases for auto-navigation', () => {
+    it('should not auto-navigate for non-ApiError with status 400', () => {
+      // Generic Error cannot have a status property
+      const genericError = new Error('Bad Request');
+      const currentPath = 'vaerak/aly';
+
+      expect(shouldAutoNavigate(genericError, currentPath)).toBe(false);
+    });
+
+    it('should handle single-level path correctly', () => {
+      const error = new ApiError('Bad Request', 400);
+      const singleLevelPath = 'vaerak';
+
+      expect(shouldAutoNavigate(error, singleLevelPath)).toBe(false);
+      expect(calculateParentPath(singleLevelPath)).toBe('');
+    });
+
+    it('should handle two-level path correctly', () => {
+      const error = new ApiError('Bad Request', 400);
+      const twoLevelPath = 'vaerak/aly';
+
+      expect(shouldAutoNavigate(error, twoLevelPath)).toBe(true);
+      expect(calculateParentPath(twoLevelPath)).toBe('vaerak');
+    });
+
+    it('should preserve path structure during navigation', () => {
+      const error = new ApiError('Bad Request', 400);
+      const paths = [
+        { current: 'a/b/c', expected: 'a/b' },
+        { current: 'vaerak/population/2023', expected: 'vaerak/population' },
+        { current: 'stats/economy/gdp/quarterly', expected: 'stats/economy/gdp' },
+      ];
+
+      paths.forEach(({ current, expected }) => {
+        if (shouldAutoNavigate(error, current)) {
+          const parentPath = calculateParentPath(current);
+          expect(parentPath).toBe(expected);
+        }
+      });
+    });
+  });
+});
+
+// =============================================================================
 // Timeout and Async Behavior Tests
 // =============================================================================
 
