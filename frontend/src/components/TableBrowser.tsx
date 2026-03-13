@@ -18,7 +18,7 @@
  * <TableBrowser onTableSelect={(table) => console.log(table)} />
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useStatFinTables } from '../api/fetch-config';
 import { ApiError } from '../api/client';
 import type { StatFinTableInfo } from '../types/api';
@@ -414,6 +414,16 @@ export function TableBrowser({
     isError,
     error,
   } = useStatFinTables({ path: currentPath });
+
+  // Auto-navigate to parent folder on 400 errors (inaccessible/deprecated folders)
+  useEffect(() => {
+    // Check if we have a 400 error (Bad Request - inaccessible/deprecated folder)
+    if (isError && error instanceof ApiError && error.status === 400) {
+      // TODO: Calculate parent path and navigate (next subtask)
+      // TODO: Add setTimeout with cleanup (subsequent subtask)
+      // TODO: Handle edge cases like root level (subsequent subtask)
+    }
+  }, [isError, error, currentPath, disabled]);
 
   // Build breadcrumb items from current path
   const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
