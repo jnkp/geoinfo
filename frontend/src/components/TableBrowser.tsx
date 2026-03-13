@@ -23,6 +23,16 @@ import { useStatFinTables } from '../api/fetch-config';
 import type { StatFinTableInfo } from '../types/api';
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+/**
+ * List of folder IDs that should be filtered from the table browser.
+ * These folders are known to be inaccessible or deprecated.
+ */
+const FOLDER_BLOCKLIST = ['aly'];
+
+// =============================================================================
 // Types
 // =============================================================================
 
