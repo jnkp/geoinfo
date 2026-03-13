@@ -256,7 +256,7 @@ function LoadingState() {
 /**
  * Error state component
  */
-function ErrorState({ message }: { message: string }) {
+function ErrorState({ message, statusCode }: { message: string; statusCode?: number }) {
   return (
     <div style={styles.error}>
       <div style={styles.errorTitle}>Failed to load tables</div>
