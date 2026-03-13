@@ -419,9 +419,13 @@ export function TableBrowser({
   useEffect(() => {
     // Check if we have a 400 error (Bad Request - inaccessible/deprecated folder)
     if (isError && error instanceof ApiError && error.status === 400) {
-      // TODO: Calculate parent path and navigate (next subtask)
+      // Calculate parent path by removing last segment
+      const pathParts = currentPath.split('/').filter(Boolean);
+      const parentPath = pathParts.slice(0, -1).join('/');
+
       // TODO: Add setTimeout with cleanup (subsequent subtask)
       // TODO: Handle edge cases like root level (subsequent subtask)
+      // TODO: Navigate to parentPath
     }
   }, [isError, error, currentPath, disabled]);
 
