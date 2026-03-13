@@ -257,10 +257,15 @@ function LoadingState() {
  * Error state component
  */
 function ErrorState({ message, statusCode }: { message: string; statusCode?: number }) {
+  // Display specific message for 400 status code (Bad Request - inaccessible/deprecated folder)
+  const displayMessage = statusCode === 400
+    ? 'This folder is currently inaccessible or has been deprecated'
+    : message;
+
   return (
     <div style={styles.error}>
       <div style={styles.errorTitle}>Failed to load tables</div>
-      <p>{message}</p>
+      <p>{displayMessage}</p>
     </div>
   );
 }
@@ -493,7 +498,10 @@ export function TableBrowser({
         {isLoading ? (
           <LoadingState />
         ) : isError ? (
-          <ErrorState message={error?.message || 'Unknown error'} />
+          <ErrorState
+            message={error?.message || 'Unknown error'}
+            statusCode={error?.status}
+          />
         ) : !filteredTables.length ? (
           <EmptyState />
         ) : (
