@@ -201,7 +201,7 @@ function parseFiltersFromURL(searchParams: URLSearchParams): Partial<FilterState
   if (datasetId) filters.datasetId = datasetId;
 
   const datasets = searchParams.get('datasets');
-  if (datasets) filters.datasetIds = datasets.split(',').filter(Boolean);
+  if (datasets !== null) filters.datasetIds = datasets.split(',').filter(Boolean);
 
   const valueLabel = searchParams.get('valueLabel');
   if (valueLabel) filters.valueLabel = valueLabel;
