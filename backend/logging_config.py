@@ -80,35 +80,46 @@ def setup_logging() -> None:
 
     # File handler with rotation (only when DEBUG=true)
     if debug:
-        # Create logs directory if it doesn't exist
-        log_dir = Path(log_file_path).parent
-        log_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            # Create logs directory if it doesn't exist
+            log_dir = Path(log_file_path).parent
+            log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Rotating file handler: 100MB max, 7 backups (7-day retention)
-        file_handler = RotatingFileHandler(
-            filename=log_file_path,
-            maxBytes=100 * 1024 * 1024,  # 100MB
-            backupCount=7,
-            encoding="utf-8",
-        )
+            # Rotating file handler: 100MB max, 7 backups (7-day retention)
+            file_handler = RotatingFileHandler(
+                filename=log_file_path,
+                maxBytes=100 * 1024 * 1024,  # 100MB
+                backupCount=7,
+                encoding="utf-8",
+            )
 
-        # Always use JSON formatter for file logs in debug mode
-        file_formatter = CustomJsonFormatter(
-            "%(timestamp)s %(level)s %(name)s %(message)s"
-        )
-        file_handler.setFormatter(file_formatter)
-        file_handler.setLevel(log_level)
-        root_logger.addHandler(file_handler)
+            # Always use JSON formatter for file logs in debug mode
+            file_formatter = CustomJsonFormatter(
+                "%(timestamp)s %(level)s %(name)s %(message)s"
+            )
+            file_handler.setFormatter(file_formatter)
+            file_handler.setLevel(log_level)
+            root_logger.addHandler(file_handler)
 
-        root_logger.info(
-            "Logging initialized",
-            extra={
-                "debug": debug,
-                "log_level": log_level,
-                "log_format": log_format,
-                "log_file": log_file_path,
-            },
-        )
+            root_logger.info(
+                "Logging initialized",
+                extra={
+                    "debug": debug,
+                    "log_level": log_level,
+                    "log_format": log_format,
+                    "log_file": log_file_path,
+                },
+            )
+        except (PermissionError, OSError) as e:
+            # Gracefully handle file logging failures (e.g., permission issues)
+            root_logger.warning(
+                "File logging disabled due to error",
+                extra={
+                    "error": str(e),
+                    "log_file": log_file_path,
+                    "fallback": "console-only",
+                },
+            )
     else:
         root_logger.info(
             "Logging initialized (file logging disabled)",
