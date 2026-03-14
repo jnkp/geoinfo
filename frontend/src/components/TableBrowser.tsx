@@ -18,9 +18,20 @@
  * <TableBrowser onTableSelect={(table) => console.log(table)} />
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useStatFinTables } from '../api/fetch-config';
+import { ApiError } from '../api/client';
 import type { StatFinTableInfo } from '../types/api';
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+/**
+ * List of folder IDs that should be filtered from the table browser.
+ * These folders are known to be inaccessible or deprecated.
+ */
+const FOLDER_BLOCKLIST = ['aly'];
 
 // =============================================================================
 // Types
@@ -246,11 +257,16 @@ function LoadingState() {
 /**
  * Error state component
  */
-function ErrorState({ message }: { message: string }) {
+function ErrorState({ message, statusCode }: { message: string; statusCode?: number }) {
+  // Display specific message for 400 status code (Bad Request - inaccessible/deprecated folder)
+  const displayMessage = statusCode === 400
+    ? 'This folder is currently inaccessible or has been deprecated'
+    : message;
+
   return (
     <div style={styles.error}>
       <div style={styles.errorTitle}>Failed to load tables</div>
-      <p>{message}</p>
+      <p>{displayMessage}</p>
     </div>
   );
 }
@@ -399,6 +415,32 @@ export function TableBrowser({
     error,
   } = useStatFinTables({ path: currentPath });
 
+  // Auto-navigate to parent folder on 400 errors (inaccessible/deprecated folders)
+  useEffect(() => {
+    // Check if we have a 400 error (Bad Request - inaccessible/deprecated folder)
+    if (isError && error instanceof ApiError && error.status === 400) {
+      // Don't navigate if we're at the root level (no parent to navigate to)
+      if (!currentPath) {
+        return;
+      }
+
+      // Calculate parent path by removing last segment
+      const pathParts = currentPath.split('/').filter(Boolean);
+      const parentPath = pathParts.slice(0, -1).join('/');
+
+      // Wait 1 second before auto-navigating to parent
+      const timeoutId = setTimeout(() => {
+        if (!disabled) {
+          setCurrentPath(parentPath);
+        }
+      }, 1000);
+
+      // Cleanup: clear timeout if component unmounts or dependencies change
+      // (e.g., user manually navigates during the timeout period)
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isError, error, currentPath, disabled]);
+
   // Build breadcrumb items from current path
   const breadcrumbs = useMemo<BreadcrumbItem[]>(() => {
     const items: BreadcrumbItem[] = [{ label: 'StatFin', path: '' }];
@@ -453,6 +495,19 @@ export function TableBrowser({
     ...(compact ? styles.compact.content : {}),
   }), [compact]);
 
+  // Filter out blocklisted folders
+  const filteredTables = useMemo(() => {
+    if (!tablesData?.tables) return [];
+
+    return tablesData.tables.filter(table => {
+      // Only filter folders, not tables
+      if (table.type !== 'folder') return true;
+
+      // Exclude folders whose table_id (lowercased) is in blocklist
+      return !FOLDER_BLOCKLIST.includes(table.table_id.toLowerCase());
+    });
+  }, [tablesData]);
+
   return (
     <div style={containerStyle}>
       {/* Header with breadcrumbs */}
@@ -470,12 +525,15 @@ export function TableBrowser({
         {isLoading ? (
           <LoadingState />
         ) : isError ? (
-          <ErrorState message={error?.message || 'Unknown error'} />
-        ) : !tablesData?.tables.length ? (
+          <ErrorState
+            message={error?.message || 'Unknown error'}
+            statusCode={error instanceof ApiError ? error.status : undefined}
+          />
+        ) : !filteredTables.length ? (
           <EmptyState />
         ) : (
           <ul style={styles.list} role="list" aria-label="StatFin tables">
-            {tablesData.tables.map((table) => (
+            {filteredTables.map((table) => (
               <TableItem
                 key={table.table_id}
                 table={table}
