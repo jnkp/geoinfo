@@ -501,6 +501,11 @@ export function TableBrowser({
           <ErrorState
             message={error?.message || 'Unknown error'}
             statusCode={error instanceof ApiError ? error.status : undefined}
+            debugInfo={error instanceof ApiError && error.errorResponse ? {
+              request_id: (error.errorResponse as any).request_id,
+              stack: (error.errorResponse as any).stack_trace,
+              type: (error.errorResponse as any).type,
+            } : undefined}
           />
         ) : !filteredTables.length ? (
           <EmptyState />
