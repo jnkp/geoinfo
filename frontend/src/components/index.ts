@@ -36,7 +36,3 @@ export type { FetchConfigListProps } from './FetchConfigList';
 // Dataset selection components
 export { DatasetSelector, createDatasetColorMap, getDatasetColor, DATASET_COLORS } from './DatasetSelector';
 export type { DatasetSelectorProps, DatasetColorMap } from './DatasetSelector';
-
-// Error handling components
-export { ErrorState } from './ErrorState';
-export type { ErrorStateProps } from './ErrorState';
