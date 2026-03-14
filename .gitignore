@@ -8,3 +8,8 @@
 .worktrees/
 .security-key
 logs/security/
+
+# Python virtual environments
+.venv/
+venv/
+env/

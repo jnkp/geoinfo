@@ -4,7 +4,6 @@ import pytest
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from httpx import AsyncClient, ASGITransport
 
 # Mock settings before importing anything else
@@ -1399,7 +1398,7 @@ class TestStatFinRoutes:
     async def test_list_statfin_tables_with_path(self, mock_db):
         """Test listing StatFin tables at a specific path."""
         with patch("config.get_settings", return_value=mock_settings):
-            from api.routes.fetch import StatFinClient, StatFinError
+            from api.routes.fetch import StatFinClient
 
             with patch.object(
                 StatFinClient, "__aenter__", new_callable=AsyncMock
