@@ -29,6 +29,11 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-geoinfo}:${POSTGRES_PASSWORD:-geoinfo}@db:5432/${POSTGRES_DB:-geoinfo}
       STATFIN_BASE_URL: ${STATFIN_BASE_URL:-https://pxdata.stat.fi/PxWeb/api/v1/fi/StatFin}
       FETCH_INTERVAL_HOURS: ${FETCH_INTERVAL_HOURS:-24}
+      DEBUG: ${DEBUG:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_FILE_PATH: ${LOG_FILE_PATH:-./logs/app.log}
+      SLOW_REQUEST_THRESHOLD_MS: ${SLOW_REQUEST_THRESHOLD_MS:-1000}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
