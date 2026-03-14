@@ -121,6 +121,31 @@ const styles = {
     color: 'var(--color-gray-700)',
     marginBottom: 'var(--spacing-1)',
   },
+  copyButton: {
+    padding: 'var(--spacing-2) var(--spacing-3)',
+    backgroundColor: 'var(--color-white)',
+    color: 'var(--color-error)',
+    border: '1px solid var(--color-error)',
+    borderRadius: 'var(--radius)',
+    cursor: 'pointer',
+    fontSize: 'var(--font-size-sm)',
+    fontWeight: 500,
+    transition: 'all var(--transition-fast)',
+    marginLeft: 'var(--spacing-2)',
+  },
+  copyButtonHover: {
+    backgroundColor: 'var(--color-error)',
+    color: 'var(--color-white)',
+  },
+  copyButtonSuccess: {
+    backgroundColor: 'var(--color-success)',
+    color: 'var(--color-white)',
+    borderColor: 'var(--color-success)',
+  },
+  buttonGroup: {
+    display: 'flex',
+    alignItems: 'center',
+  },
 };
 
 // =============================================================================
@@ -146,6 +171,8 @@ export function ErrorState({
   const { debugMode } = useDebug();
   const [expanded, setExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [copyHovered, setCopyHovered] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Display specific message for 400 status code (Bad Request - inaccessible/deprecated folder)
   const displayMessage = statusCode === 400
@@ -155,6 +182,32 @@ export function ErrorState({
   // Determine whether to show debug panel
   const shouldShowDebugInfo = showDebugInfo ?? debugMode;
 
+  /**
+   * Copy debug information to clipboard as formatted JSON.
+   * Includes error message, stack trace, request ID, and timestamp.
+   */
+  const copyToClipboard = async () => {
+    try {
+      const debugData = {
+        message,
+        statusCode,
+        ...debugInfo,
+        timestamp: new Date().toISOString(),
+      };
+
+      const formattedJson = JSON.stringify(debugData, null, 2);
+      await navigator.clipboard.writeText(formattedJson);
+
+      // Show success feedback
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      // Clipboard API might fail due to permissions or browser support
+      // eslint-disable-next-line no-console
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
+
   return (
     <div style={styles.error} data-testid="error-state">
       <div style={styles.errorTitle}>Failed to load tables</div>
@@ -163,18 +216,34 @@ export function ErrorState({
       {/* Debug details section - only shown when debug mode is enabled and debug info is available */}
       {shouldShowDebugInfo && debugInfo && (
         <div style={styles.debugSection} data-testid="debug-section">
-          <button
-            style={{
-              ...styles.debugButton,
-              ...(isHovered ? styles.debugButtonHover : {}),
-            }}
-            onClick={() => setExpanded(!expanded)}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            data-testid="debug-toggle-button"
-          >
-            {expanded ? '▼ Hide Debug Details' : '▶ Show Debug Details'}
-          </button>
+          <div style={styles.buttonGroup}>
+            <button
+              style={{
+                ...styles.debugButton,
+                ...(isHovered ? styles.debugButtonHover : {}),
+              }}
+              onClick={() => setExpanded(!expanded)}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              data-testid="debug-toggle-button"
+            >
+              {expanded ? '▼ Hide Debug Details' : '▶ Show Debug Details'}
+            </button>
+
+            <button
+              style={{
+                ...styles.copyButton,
+                ...(copySuccess ? styles.copyButtonSuccess : {}),
+                ...(copyHovered && !copySuccess ? styles.copyButtonHover : {}),
+              }}
+              onClick={copyToClipboard}
+              onMouseEnter={() => setCopyHovered(true)}
+              onMouseLeave={() => setCopyHovered(false)}
+              data-testid="copy-debug-button"
+            >
+              {copySuccess ? '✓ Copied!' : '📋 Copy Debug Info'}
+            </button>
+          </div>
 
           {expanded && (
             <div style={styles.debugPanel} data-testid="debug-panel">
