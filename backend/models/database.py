@@ -5,10 +5,15 @@ This module provides:
 - Base class for all ORM models
 - Session factory for database operations
 - Dependency injection helper for FastAPI routes
+- Database query logging with performance tracking (when DEBUG=true)
 """
 
+import logging
+import os
+import time
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import Engine, event
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -17,6 +22,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 
 from config import get_settings
+from logging_config import request_id_var
 
 
 # Get settings
@@ -38,6 +44,72 @@ async_session_maker = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,  # Don't expire objects after commit for easier use
 )
+
+
+# Database query logging (only active when DEBUG=true)
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+SLOW_QUERY_THRESHOLD_MS = 100  # Flag queries slower than 100ms
+logger = logging.getLogger(__name__)
+
+
+@event.listens_for(Engine, "before_cursor_execute")
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    """Capture query start time for performance tracking.
+
+    Args:
+        conn: Database connection
+        cursor: Database cursor
+        statement: SQL statement to execute
+        parameters: Query parameters
+        context: Execution context
+        executemany: Whether executing multiple statements
+    """
+    if DEBUG:
+        # Store start time in connection info for duration calculation
+        conn.info.setdefault("query_start_time", []).append(time.perf_counter())
+
+
+@event.listens_for(Engine, "after_cursor_execute")
+def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    """Log query execution with duration and slow query detection.
+
+    Args:
+        conn: Database connection
+        cursor: Database cursor
+        statement: SQL statement executed
+        parameters: Query parameters
+        context: Execution context
+        executemany: Whether executed multiple statements
+    """
+    if DEBUG:
+        # Calculate query duration
+        start_times = conn.info.get("query_start_time", [])
+        if start_times:
+            start_time = start_times.pop()
+            duration_ms = (time.perf_counter() - start_time) * 1000
+
+            # Determine if query is slow
+            is_slow = duration_ms > SLOW_QUERY_THRESHOLD_MS
+
+            # Log query execution with structured data
+            log_data = {
+                "sql": statement,
+                "params": parameters,
+                "duration_ms": round(duration_ms, 2),
+                "slow_query": is_slow,
+                "request_id": request_id_var.get(""),
+            }
+
+            if is_slow:
+                logger.warning(
+                    f"Slow database query ({duration_ms:.2f}ms)",
+                    extra=log_data,
+                )
+            else:
+                logger.debug(
+                    f"Database query executed ({duration_ms:.2f}ms)",
+                    extra=log_data,
+                )
 
 
 class Base(DeclarativeBase):
