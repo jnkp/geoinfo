@@ -13,8 +13,9 @@ Run with:
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+import uuid
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import get_settings
@@ -90,6 +91,28 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
 )
+
+
+@app.middleware("http")
+async def add_request_id(request: Request, call_next):
+    """Middleware to generate and attach unique request ID to each request.
+
+    The request ID is:
+    - Stored in request.state.request_id for use in handlers and error logging
+    - Added to response headers as X-Request-ID for client-side tracking
+
+    Args:
+        request: The incoming request
+        call_next: Function to call the next middleware/handler
+
+    Returns:
+        Response with X-Request-ID header
+    """
+    request_id = str(uuid.uuid4())
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
 
 
 @app.get("/", tags=["root"])
