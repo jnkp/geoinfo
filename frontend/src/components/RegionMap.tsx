@@ -67,7 +67,7 @@ interface RegionProperties {
   name_sv?: string;
   name_en?: string;
   level: RegionLevel;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /** Extended feature type with our properties */

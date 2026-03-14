@@ -189,8 +189,8 @@ export interface StatisticBase {
   data_quality: string | null;
 }
 
-/** Interface for creating a new statistic data point */
-export interface StatisticCreate extends StatisticBase {}
+/** Type for creating a new statistic data point */
+export type StatisticCreate = StatisticBase;
 
 /** Interface for statistic API response */
 export interface StatisticResponse extends StatisticBase {

@@ -1007,6 +1007,7 @@ describe('TableBrowser - Combined Edge Case Scenarios', () => {
       { table_id: 'very-long-' + 'x'.repeat(500), text: 'Long ID', type: 'folder', path: ['long'] },
 
       // Type variations
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { table_id: 'unknown', text: 'Unknown Type', type: 'unknown' as any, path: ['unknown'] },
     ];
 
@@ -1089,6 +1090,7 @@ describe('TableBrowser - Stress Test Edge Cases', () => {
 
 describe('TableBrowser - Null Safety Edge Cases', () => {
   it('should handle ApiError with undefined status gracefully', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const error = new ApiError('Error without status', undefined as any);
 
     expect(shouldShow400Message(error.status)).toBe(false);
@@ -1096,7 +1098,9 @@ describe('TableBrowser - Null Safety Edge Cases', () => {
   });
 
   it('should handle null and undefined in path calculations', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(calculateParentPath(null as any)).toBe('');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(calculateParentPath(undefined as any)).toBe('');
   });
 
@@ -1115,11 +1119,13 @@ describe('TableBrowser - Null Safety Edge Cases', () => {
   });
 
   it('should handle error message with null default message', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const message = getErrorMessage(500, null as any);
     expect(message).toBe(null);
   });
 
   it('should handle error message with undefined default message', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const message = getErrorMessage(500, undefined as any);
     expect(message).toBe(undefined);
   });
