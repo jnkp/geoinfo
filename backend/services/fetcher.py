@@ -27,7 +27,6 @@ from typing import Any, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import get_settings
 from models.database import async_session_maker
 from models.dimensions import Industry, Region
 from models.fetch_config import FetchConfig
@@ -748,13 +747,13 @@ class DataFetcher:
 
         async with async_session_maker() as session:
             # Query active fetch configs that are due
-            query = select(FetchConfig).where(FetchConfig.is_active == True)
+            query = select(FetchConfig).where(FetchConfig.is_active)
 
             if not force:
                 now = datetime.utcnow()
                 query = query.where(
                     (FetchConfig.next_fetch_at <= now) |
-                    (FetchConfig.next_fetch_at == None)
+                    (FetchConfig.next_fetch_at is None)
                 )
 
             # Order by priority (higher first), then by next_fetch_at
