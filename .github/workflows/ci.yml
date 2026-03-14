@@ -113,7 +113,7 @@ jobs:
       - name: Run pytest
         working-directory: ./backend
         env:
-          DATABASE_URL: postgresql://geoinfo:geoinfo@localhost:5432/geoinfo_test
+          DATABASE_URL: postgresql+asyncpg://geoinfo:geoinfo@localhost:5432/geoinfo_test
         run: pytest tests/ -v
 
   # Frontend Tests with Vitest
