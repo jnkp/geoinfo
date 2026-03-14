@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Application Settings
     debug: bool = False
     log_level: str = "INFO"
+    log_format: str = "json"
+    log_file_path: str = "./logs/app.log"
+    slow_request_threshold_ms: int = 1000
 
     @property
     def async_database_url(self) -> str:
