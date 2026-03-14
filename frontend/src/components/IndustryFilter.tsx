@@ -216,7 +216,6 @@ export function IndustryFilter({
   const {
     filters,
     setIndustryCode,
-    setIndustryLevel: _setIndustryLevel,
     setIndustry,
     resetIndustryFilters,
   } = useFilterContext();
