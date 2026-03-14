@@ -25,11 +25,10 @@ Usage:
 import asyncio
 import logging
 import os
-from datetime import datetime
-from typing import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -43,16 +42,6 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # Test Configuration and Fixtures
 # =============================================================================
-
-
-def pytest_addoption(parser):
-    """Add custom pytest options."""
-    parser.addoption(
-        "--live-statfin",
-        action="store_true",
-        default=False,
-        help="Run tests against live StatFin API (slower)",
-    )
 
 
 @pytest.fixture(scope="session")
@@ -85,13 +74,12 @@ def mock_settings():
     return settings
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def db_session(mock_settings):
     """Create a test database session with transaction rollback."""
     # Import models to ensure they're registered
     with patch("config.get_settings", return_value=mock_settings):
         from models.database import Base
-        from models import Dataset, Statistic, FetchConfig, Region, Industry
 
         # Create test engine
         engine = create_async_engine(
