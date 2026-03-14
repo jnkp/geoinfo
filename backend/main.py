@@ -13,10 +13,12 @@ Run with:
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+import traceback
 import uuid
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from config import get_settings
 from models.database import init_db, close_db
@@ -77,6 +79,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Set debug mode from settings
+app.state.debug = settings.debug
+
 # Configure CORS middleware
 # Allow requests from frontend development server and production origins
 app.add_middleware(
@@ -113,6 +118,38 @@ async def add_request_id(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Request-ID"] = request_id
     return response
+
+
+@app.exception_handler(Exception)
+async def debug_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Global exception handler with debug-aware stack traces.
+
+    Handles all uncaught exceptions and returns a consistent error response.
+    In debug mode, includes stack traces and exception type information.
+
+    Args:
+        request: The incoming request
+        exc: The exception that was raised
+
+    Returns:
+        JSONResponse with error details, request ID, and optional stack trace
+    """
+    request_id = getattr(request.state, "request_id", "unknown")
+    error_detail = {
+        "error": str(exc),
+        "request_id": request_id,
+    }
+
+    # Only include stack trace in debug mode
+    if app.state.debug:
+        error_detail["stack_trace"] = traceback.format_exc()
+        error_detail["type"] = type(exc).__name__
+
+    return JSONResponse(
+        status_code=500,
+        content=error_detail,
+        headers={"X-Request-ID": request_id},
+    )
 
 
 @app.get("/", tags=["root"])
