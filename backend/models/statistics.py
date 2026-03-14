@@ -10,7 +10,7 @@ sharing common dimensions.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     DateTime,
@@ -24,6 +24,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.database import Base
+
+if TYPE_CHECKING:
+    from models.fetch_config import FetchConfig
 
 
 class Dataset(Base):

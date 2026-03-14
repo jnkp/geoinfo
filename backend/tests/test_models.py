@@ -1,6 +1,5 @@
 """Unit tests for database models."""
 
-import pytest
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 

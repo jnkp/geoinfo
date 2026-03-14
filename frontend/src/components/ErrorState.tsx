@@ -203,7 +203,6 @@ export function ErrorState({
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (error) {
       // Clipboard API might fail due to permissions or browser support
-      // eslint-disable-next-line no-console
       console.error('Failed to copy to clipboard:', error);
     }
   };

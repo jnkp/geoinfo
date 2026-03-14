@@ -12,7 +12,6 @@ from services.statfin import (
     StatFinDimension,
     StatFinTableMetadata,
     StatFinCategory,
-    StatFinParsedDimension,
     StatFinDataPoint,
     StatFinDataset,
     StatFinClient,
@@ -425,7 +424,7 @@ class TestStatFinClientAsync:
         with patch.object(
             statfin_client, "_ensure_client", return_value=mock_client
         ):
-            tables = await statfin_client.list_tables("vaerak")
+            _ = await statfin_client.list_tables("vaerak")
 
         mock_client.get.assert_called_once()
         called_url = mock_client.get.call_args[0][0]

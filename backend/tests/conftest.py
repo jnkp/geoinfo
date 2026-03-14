@@ -1,7 +1,7 @@
 """Pytest fixtures for StatFin client tests."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from services.statfin import (
     StatFinClient,
@@ -9,6 +9,16 @@ from services.statfin import (
     StatFinParsedDimension,
     StatFinDataset,
 )
+
+
+def pytest_addoption(parser):
+    """Add custom pytest options."""
+    parser.addoption(
+        "--live-statfin",
+        action="store_true",
+        default=False,
+        help="Run tests against live StatFin API (slower)",
+    )
 
 
 @pytest.fixture

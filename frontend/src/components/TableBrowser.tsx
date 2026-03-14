@@ -502,8 +502,11 @@ export function TableBrowser({
             message={error?.message || 'Unknown error'}
             statusCode={error instanceof ApiError ? error.status : undefined}
             debugInfo={error instanceof ApiError && error.errorResponse ? {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               request_id: (error.errorResponse as any).request_id,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               stack: (error.errorResponse as any).stack_trace,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               type: (error.errorResponse as any).type,
             } : undefined}
           />
