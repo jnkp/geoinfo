@@ -83,12 +83,16 @@ async def export_logs() -> FileResponse:
 
         logger.info(f"Logs archive created successfully with {len(log_files)} files")
 
+        # Create async cleanup function
+        async def cleanup():
+            await _cleanup_temp_file(zip_path)
+
         # Return the zip file and schedule cleanup after response is sent
         return FileResponse(
             path=zip_path,
             media_type="application/zip",
             filename="logs.zip",
-            background=_cleanup_temp_file(zip_path),
+            background=cleanup,
         )
 
     except Exception as e:
@@ -99,20 +103,14 @@ async def export_logs() -> FileResponse:
         )
 
 
-def _cleanup_temp_file(file_path: str):
+async def _cleanup_temp_file(file_path: str):
     """Background task to clean up temporary zip file after response is sent.
 
     Args:
         file_path: Path to the temporary file to delete
-
-    Returns:
-        Callable that removes the file
     """
-    def cleanup():
-        try:
-            os.unlink(file_path)
-            logger.debug(f"Cleaned up temporary file: {file_path}")
-        except Exception as e:
-            logger.warning(f"Failed to clean up temporary file {file_path}: {e}")
-
-    return cleanup
+    try:
+        os.unlink(file_path)
+        logger.debug(f"Cleaned up temporary file: {file_path}")
+    except Exception as e:
+        logger.warning(f"Failed to clean up temporary file {file_path}: {e}")
