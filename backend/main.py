@@ -168,13 +168,32 @@ async def root() -> dict[str, str]:
 
 
 @app.get("/health", tags=["health"])
-async def health_check() -> dict[str, str]:
+async def health_check(request: Request) -> dict:
     """Health check endpoint for monitoring and container orchestration.
 
+    In debug mode, includes additional diagnostic information such as:
+    - Debug mode status
+    - Database configuration
+    - Environment settings
+
+    Args:
+        request: The incoming request (used to access app state)
+
     Returns:
-        dict: Health status of the API.
+        dict: Health status and optional debug diagnostics.
     """
-    return {"status": "healthy"}
+    response = {"status": "healthy"}
+
+    # Include debug diagnostics in debug mode
+    if app.state.debug:
+        response["debug"] = {
+            "debug_mode": True,
+            "database_url": settings.database_url.split("@")[-1] if "@" in settings.database_url else "***",
+            "cors_origins": app.middleware_stack.__dict__.get("app", app).__dict__.get("user_middleware", []),
+            "environment": settings.environment if hasattr(settings, "environment") else "unknown",
+        }
+
+    return response
 
 
 # Register API routers
