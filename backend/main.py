@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 from config import get_settings
 from models.database import init_db, close_db
 from api.routes import datasets_router, dimensions_router, fetch_router, statfin_router, statistics_router
+from api.admin import router as admin_router
 from logging_config import setup_logging
 from middleware.logging import LoggingMiddleware
 
@@ -211,3 +212,4 @@ app.include_router(statistics_router, prefix="/api/statistics", tags=["statistic
 app.include_router(dimensions_router, prefix="/api", tags=["dimensions"])
 app.include_router(fetch_router, prefix="/api/fetch-configs", tags=["fetch"])
 app.include_router(statfin_router, prefix="/api/statfin", tags=["statfin"])
+app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
