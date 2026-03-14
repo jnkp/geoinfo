@@ -9,6 +9,9 @@
 
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 
+// Context providers
+import { DebugProvider } from './context/DebugContext';
+
 // Page components
 import Dashboard from './pages/Dashboard';
 import FetchConfig from './pages/FetchConfig';
@@ -87,12 +90,14 @@ function AppContent() {
 }
 
 /**
- * Main application component with routing setup
+ * Main application component with routing setup and context providers
  */
 function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <DebugProvider>
+        <AppContent />
+      </DebugProvider>
     </BrowserRouter>
   );
 }
