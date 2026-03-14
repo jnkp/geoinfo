@@ -7,7 +7,7 @@
 .claude_settings.json
 .worktrees/
 .security-key
-logs/security/
+logs/
 
 # Python virtual environments
 .venv/

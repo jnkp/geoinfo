@@ -23,6 +23,9 @@ from fastapi.responses import JSONResponse
 from config import get_settings
 from models.database import init_db, close_db
 from api.routes import datasets_router, dimensions_router, fetch_router, statfin_router, statistics_router
+from api.admin import router as admin_router
+from logging_config import setup_logging
+from middleware.logging import LoggingMiddleware
 
 # Load settings
 settings = get_settings()
@@ -33,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler for startup and shutdown events.
 
     On startup:
+        - Configure structured logging with JSON output
         - Initialize database connection pool
         - Create tables if they don't exist (dev mode)
 
@@ -40,6 +44,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         - Close database connection pool
     """
     # Startup
+    setup_logging()
     await init_db()
     yield
     # Shutdown
@@ -97,6 +102,10 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
     expose_headers=["X-Request-ID"],  # Expose request ID header to clients
 )
+
+# Configure logging middleware for request/response tracking
+# Only active when DEBUG=true to ensure zero performance overhead in production
+app.add_middleware(LoggingMiddleware, slow_threshold_ms=1000)
 
 
 @app.middleware("http")
@@ -203,3 +212,4 @@ app.include_router(statistics_router, prefix="/api/statistics", tags=["statistic
 app.include_router(dimensions_router, prefix="/api", tags=["dimensions"])
 app.include_router(fetch_router, prefix="/api/fetch-configs", tags=["fetch"])
 app.include_router(statfin_router, prefix="/api/statfin", tags=["statfin"])
+app.include_router(admin_router, prefix="/api/admin", tags=["admin"])

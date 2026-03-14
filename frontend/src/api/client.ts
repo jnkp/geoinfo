@@ -147,18 +147,53 @@ export async function fetchApi<T>(path: string, options: FetchOptions = {}): Pro
   }
 
   const url = `${API_PREFIX}${path}`;
-  const response = await fetch(url, config);
 
-  if (!response.ok) {
-    throw await parseErrorResponse(response);
+  // Debug logging: track request timing
+  const isDebug = import.meta.env.DEV;
+  const startTime = isDebug ? performance.now() : 0;
+  const method = config.method || 'GET';
+
+  if (isDebug) {
+    console.debug(`[API] ${method} ${url}`);
   }
 
-  // Handle empty responses (204 No Content)
-  if (response.status === 204) {
-    return undefined as T;
-  }
+  try {
+    const response = await fetch(url, config);
 
-  return response.json() as Promise<T>;
+    if (!response.ok) {
+      throw await parseErrorResponse(response);
+    }
+
+    // Handle empty responses (204 No Content)
+    if (response.status === 204) {
+      if (isDebug) {
+        const duration = performance.now() - startTime;
+        console.debug(`[API] ${method} ${url} - ${response.status} (${duration.toFixed(2)}ms)`);
+        if (duration > 2000) {
+          console.warn(`[API] Slow request detected: ${method} ${url} took ${duration.toFixed(2)}ms`);
+        }
+      }
+      return undefined as T;
+    }
+
+    const result = await response.json() as Promise<T>;
+
+    if (isDebug) {
+      const duration = performance.now() - startTime;
+      console.debug(`[API] ${method} ${url} - ${response.status} (${duration.toFixed(2)}ms)`);
+      if (duration > 2000) {
+        console.warn(`[API] Slow request detected: ${method} ${url} took ${duration.toFixed(2)}ms`);
+      }
+    }
+
+    return result;
+  } catch (error) {
+    if (isDebug) {
+      const duration = performance.now() - startTime;
+      console.debug(`[API] ${method} ${url} - Error (${duration.toFixed(2)}ms)`, error);
+    }
+    throw error;
+  }
 }
 
 // =============================================================================

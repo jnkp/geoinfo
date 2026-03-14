@@ -395,6 +395,7 @@ function RegionFilterSection({ compact = false, disabled = false }: RegionFilter
   const {
     filters,
     setRegionCode,
+    setRegionLevel: _setRegionLevel,
     setRegion,
     resetGeographicFilters,
   } = useFilterContext();
