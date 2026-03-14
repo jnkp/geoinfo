@@ -5,9 +5,13 @@
  * - React Router configuration for SPA navigation
  * - Application layout (header, main, footer)
  * - Navigation component
+ * - Debug mode banner
  */
 
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+
+// Context providers
+import { DebugProvider, useDebug } from './context/DebugContext';
 
 // Page components
 import Dashboard from './pages/Dashboard';
@@ -63,6 +67,68 @@ function Navigation() {
 }
 
 /**
+ * Debug mode banner component
+ *
+ * Displays a visual indicator when debug mode is enabled.
+ * Provides a toggle button to enable/disable debug mode.
+ */
+function DebugBanner() {
+  const { debugMode, toggleDebug } = useDebug();
+
+  if (!debugMode) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--color-warning)',
+        color: 'var(--color-gray-900)',
+        padding: 'var(--spacing-2) var(--spacing-4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 'var(--spacing-4)',
+        fontSize: 'var(--font-size-sm)',
+        fontWeight: 500,
+        borderBottom: '1px solid var(--color-gray-300)',
+        boxShadow: 'var(--shadow-sm)',
+      }}
+      data-testid="debug-banner"
+    >
+      <span>
+        ⚠️ Debug Mode Enabled - Verbose error reporting is active
+      </span>
+      <button
+        onClick={toggleDebug}
+        style={{
+          padding: 'var(--spacing-1) var(--spacing-3)',
+          fontSize: 'var(--font-size-sm)',
+          fontWeight: 500,
+          borderRadius: 'var(--radius)',
+          border: '1px solid var(--color-gray-700)',
+          backgroundColor: 'var(--color-white)',
+          color: 'var(--color-gray-700)',
+          cursor: 'pointer',
+          transition: 'all var(--transition-fast)',
+        }}
+        data-testid="debug-toggle-button"
+        onMouseOver={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--color-gray-100)';
+          e.currentTarget.style.borderColor = 'var(--color-gray-900)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--color-white)';
+          e.currentTarget.style.borderColor = 'var(--color-gray-700)';
+        }}
+      >
+        Disable Debug Mode
+      </button>
+    </div>
+  );
+}
+
+/**
  * Inner app component that uses routing hooks
  * Must be inside BrowserRouter
  */
@@ -72,6 +138,7 @@ function AppContent() {
       <header className="header">
         <Navigation />
       </header>
+      <DebugBanner />
       <main className="main">
         <Routes>
           <Route path="/" element={<Dashboard />} />
@@ -87,12 +154,14 @@ function AppContent() {
 }
 
 /**
- * Main application component with routing setup
+ * Main application component with routing setup and context providers
  */
 function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <DebugProvider>
+        <AppContent />
+      </DebugProvider>
     </BrowserRouter>
   );
 }
