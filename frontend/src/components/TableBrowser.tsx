@@ -22,6 +22,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useStatFinTables } from '../api/fetch-config';
 import { ApiError } from '../api/client';
 import type { StatFinTableInfo } from '../types/api';
+import { ErrorState } from './ErrorState';
 
 // =============================================================================
 // Constants
@@ -196,17 +197,6 @@ const styles = {
     animation: 'spin 1s linear infinite',
     marginRight: 'var(--spacing-3)',
   },
-  error: {
-    padding: 'var(--spacing-4)',
-    backgroundColor: 'var(--color-error-light)',
-    borderRadius: 'var(--radius)',
-    color: 'var(--color-error)',
-    textAlign: 'center' as const,
-  },
-  errorTitle: {
-    fontWeight: 600,
-    marginBottom: 'var(--spacing-2)',
-  },
   empty: {
     display: 'flex',
     flexDirection: 'column' as const,
@@ -250,23 +240,6 @@ function LoadingState() {
     <div style={styles.loading}>
       <div style={styles.spinner} />
       <span>Loading tables...</span>
-    </div>
-  );
-}
-
-/**
- * Error state component
- */
-function ErrorState({ message, statusCode }: { message: string; statusCode?: number }) {
-  // Display specific message for 400 status code (Bad Request - inaccessible/deprecated folder)
-  const displayMessage = statusCode === 400
-    ? 'This folder is currently inaccessible or has been deprecated'
-    : message;
-
-  return (
-    <div style={styles.error}>
-      <div style={styles.errorTitle}>Failed to load tables</div>
-      <p>{displayMessage}</p>
     </div>
   );
 }
